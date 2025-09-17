@@ -1,1 +1,8 @@
 gistre26-dril-sdk/
+*.order
+*.symvers
+*.o
+*.mod
+*.mod.c
+*.ko
+.*

@@ -1,7 +1,6 @@
-KDIR := /usr/src/linux-headers-$(shell uname -r)
 PWD  := $(shell pwd)
 
-obj-m := hello-world.o
+obj-m := gistre_card.o
 
 default: modules
 modules clean:
