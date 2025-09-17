@@ -1,8 +1,9 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 
-MODULE_AUTHOR("Anton et Martin");
-MODULE_DESCRIPTION("module for gistre_card");
+MODULE_AUTHOR("Anton VELLA <anton.vella@epita.fr>");
+MODULE_AUTHOR("Martin LEVESQUE <martin.levesque@epita.fr>");
+MODULE_DESCRIPTION("MFRC522 card reader driver");
 MODULE_LICENSE("GPL v2");
 
 __init
