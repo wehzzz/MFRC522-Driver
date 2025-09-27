@@ -1,3 +1,5 @@
+#!/bin/sh
+
 cd gistre26-dril-sdk/dril-sdk/
 echo "Export ENV variables"
 export PATH=$(pwd)/buildroot-dril-sdk/aarch64-buildroot-linux-gnu_sdk-buildroot/bin:"$PATH"
@@ -9,3 +11,9 @@ cd -
 cd groupe7/src/
 echo "Compiling the module"
 make modules
+
+if [ "$1" = "run" ]; then
+    cd -
+    cd gistre26-dril-sdk/dril-sdk/buildroot-dril-sdk/
+    ./start-qemu.sh
+fi
