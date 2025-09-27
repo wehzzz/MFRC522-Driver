@@ -21,10 +21,10 @@ struct mfrc522_dev {
  * - read/write   : data transfer between user space and the device
  * - open/release : manage access to the device
  */
-static ssize_t read(struct file *, char __user *, size_t, loff_t *);
-static ssize_t write(struct file *, const char __user *, size_t, loff_t *);
-static int open(struct inode *, struct file *);
-static int release(struct inode *, struct file *);
+static ssize_t mfrc522_read(struct file *, char __user *, size_t, loff_t *);
+static ssize_t mfrc522_write(struct file *, const char __user *, size_t, loff_t *);
+static int mfrc522_open(struct inode *, struct file *);
+static int mfrc522_release(struct inode *, struct file *);
 
 /* Global variables for the module:
  * - g_major   : dynamically assigned major number for the device
@@ -35,21 +35,110 @@ static int g_major;
 static struct mfrc522_dev *g_mfrc522;
 static struct file_operations g_fops = {
 	.owner = THIS_MODULE,
-	.read = read,
-	.write = write,
-	.open = open,
-	.release = release,
+	.read = mfrc522_read,
+	.write = mfrc522_write,
+	.open = mfrc522_open,
+	.release = mfrc522_release,
 };
 
+/*
+ * Function declaration
+ */
 __init static int gistre_card_init(void)
 {
+	dev_t dev;
+	int ret = 0;
+	char *name = "card";
+
+	/* Step 1: dynamically allocate a major number */
+	ret = alloc_chrdev_region(&dev, 0, 1, name);
+	if (ret < 0) {
+		pr_err("MFRC522: failed to register device\n");
+		goto end;
+	}
+
+	g_major = MAJOR(dev);
+	pr_info("MFRC522: allocated major number for device %d", g_major);
+
+	/* Step 2: allocate memory for the device structure */
+	g_mfrc522 = kmalloc(sizeof(*g_mfrc522), GFP_KERNEL);
+	if (!g_mfrc522) {
+		pr_err("MFRC522: failed to allocate memory for device\n");
+		ret = -ENOMEM;
+		goto unregister_dev;
+	}
+
+	/* Step 3: initialize the cdev structure and add it to the kernel */
+	cdev_init(&g_mfrc522->cdev, &g_fops);
+	g_mfrc522->cdev.owner = THIS_MODULE;
+	ret = cdev_add(&g_mfrc522->cdev, dev, 1);
+	if (ret < 0) {
+		pr_err("MFRC522: failed to add device to kernel\n");
+		goto free_dev;
+	}
+
 	pr_info("Hello, GISTRE card !\n");
-	return 0;
+	goto end;
+
+free_dev:
+	kfree(g_mfrc522);
+unregister_dev:
+	unregister_chrdev_region(dev, 1);
+end:
+	return ret;
 }
+module_init(gistre_card_init);
 
 __exit static void gistre_card_exit(void)
 {
+	dev_t dev;
+
+	cdev_del(&g_mfrc522->cdev);
+
+	dev = MKDEV(g_major, 0);
+	kfree(g_mfrc522);
+	
+	unregister_chrdev_region(dev, 1);
+	pr_info("Goodbye, GISTRE card !\n");
+}
+module_exit(gistre_card_exit);
+
+static ssize_t mfrc522_read(struct file *file, char __user *buf, size_t len, loff_t *off)
+{
+	return 0;
 }
 
-module_init(gistre_card_init);
-module_exit(gistre_card_exit);
+static ssize_t mfrc522_write(struct file *file, const char __user *buf, size_t len, loff_t *off)
+{
+	return 0;
+}
+
+static int mfrc522_open(struct inode *inode, struct file *file)
+{
+	unsigned i_major;
+	unsigned i_minor;
+	
+	i_major = imajor(inode);
+	if (i_major != g_major){
+		pr_err("MFRC522: when opening node, found invalid major number %d (expected %d)\n",
+		       i_major, g_major);
+		return -ENODEV;
+	}
+
+	i_minor = iminor(inode);
+	if (i_minor != 0) {
+		pr_err("MFRC522: when opening node, found invalid nonzero minor\n");
+		return -ENODEV;
+	}
+
+	file->private_data = g_mfrc522;
+	return 0;
+}
+
+static int mfrc522_release(struct inode *inode, struct file *file)
+{
+	(void)inode;
+	(void)file;
+	return 0;
+}
+
