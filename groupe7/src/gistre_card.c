@@ -4,6 +4,7 @@
 #include <linux/fs.h>
 #include <linux/errno.h>
 #include <linux/slab.h>
+#include <mfrc522.h>
 
 MODULE_AUTHOR("Anton VELLA <anton.vella@epita.fr>");
 MODULE_AUTHOR("Martin LEVESQUE <martin.levesque@epita.fr>");
@@ -13,8 +14,11 @@ MODULE_LICENSE("GPL v2");
 /* Structures:
  * - Device structure representing the MFRC522 device
  */
-struct mfrc522_dev {
+struct card_dev {
 	struct cdev cdev;
+	struct device *dev;
+	struct mfrc522_dev *mfrc522;
+	struct regmap *regmap;
 };
 
 /* Prototypes for file operations callbacks:
@@ -22,7 +26,8 @@ struct mfrc522_dev {
  * - open/release : manage access to the device
  */
 static ssize_t mfrc522_read(struct file *, char __user *, size_t, loff_t *);
-static ssize_t mfrc522_write(struct file *, const char __user *, size_t, loff_t *);
+static ssize_t mfrc522_write(struct file *, const char __user *, size_t,
+			     loff_t *);
 static int mfrc522_open(struct inode *, struct file *);
 static int mfrc522_release(struct inode *, struct file *);
 
@@ -32,7 +37,7 @@ static int mfrc522_release(struct inode *, struct file *);
  * - g_fops    : table of file operations linked to our callbacks
  */
 static int g_major;
-static struct mfrc522_dev *g_mfrc522;
+static struct card_dev *g_mfrc522;
 static struct file_operations g_fops = {
 	.owner = THIS_MODULE,
 	.read = mfrc522_read,
@@ -58,7 +63,7 @@ __init static int gistre_card_init(void)
 	}
 
 	g_major = MAJOR(dev);
-	pr_info("MFRC522: allocated major number for device %d", g_major);
+	pr_info("MFRC522: allocated major number for device %d\n", g_major);
 
 	/* Step 2: allocate memory for the device structure */
 	g_mfrc522 = kmalloc(sizeof(*g_mfrc522), GFP_KERNEL);
@@ -97,18 +102,20 @@ __exit static void gistre_card_exit(void)
 
 	dev = MKDEV(g_major, 0);
 	kfree(g_mfrc522);
-	
+
 	unregister_chrdev_region(dev, 1);
 	pr_info("Goodbye, GISTRE card !\n");
 }
 module_exit(gistre_card_exit);
 
-static ssize_t mfrc522_read(struct file *file, char __user *buf, size_t len, loff_t *off)
+static ssize_t mfrc522_read(struct file *file, char __user *buf, size_t len,
+			    loff_t *off)
 {
 	return 0;
 }
 
-static ssize_t mfrc522_write(struct file *file, const char __user *buf, size_t len, loff_t *off)
+static ssize_t mfrc522_write(struct file *file, const char __user *buf,
+			     size_t len, loff_t *off)
 {
 	return 0;
 }
@@ -117,9 +124,9 @@ static int mfrc522_open(struct inode *inode, struct file *file)
 {
 	unsigned i_major;
 	unsigned i_minor;
-	
+
 	i_major = imajor(inode);
-	if (i_major != g_major){
+	if (i_major != g_major) {
 		pr_err("MFRC522: when opening node, found invalid major number %d (expected %d)\n",
 		       i_major, g_major);
 		return -ENODEV;
@@ -128,6 +135,22 @@ static int mfrc522_open(struct inode *inode, struct file *file)
 	i_minor = iminor(inode);
 	if (i_minor != 0) {
 		pr_err("MFRC522: when opening node, found invalid nonzero minor\n");
+		return -ENODEV;
+	}
+
+	g_mfrc522->dev = mfrc522_find_dev();
+	if (!g_mfrc522->dev) {
+		pr_err("MFRC522: could not find platform device\n");
+		return -ENODEV;
+	}
+	g_mfrc522->mfrc522 = dev_to_mfrc522(g_mfrc522->dev);
+	if (!g_mfrc522->mfrc522) {
+		pr_err("MFRC522: could not find platform device\n");
+		return -ENODEV;
+	}
+	g_mfrc522->regmap = mfrc522_get_regmap(g_mfrc522->mfrc522);
+	if (!g_mfrc522->regmap) {
+		pr_err("MFRC522: could not find regmap\n");
 		return -ENODEV;
 	}
 
@@ -141,4 +164,3 @@ static int mfrc522_release(struct inode *inode, struct file *file)
 	(void)file;
 	return 0;
 }
-

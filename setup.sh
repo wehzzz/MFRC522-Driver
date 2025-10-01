@@ -7,6 +7,7 @@ export KDIR=$(pwd)/buildroot-dril-sdk/linux-build
 export KBUILD_EXTRA_SYMBOLS=$(pwd)/mfrc522_emu-sdk/Module.symvers
 export ARCH=arm64
 export CROSS_COMPILE=aarch64-buildroot-linux-gnu-
+export CPATH=$(pwd)/mfrc522_emu-sdk/include/
 cd -
 cd groupe7/src/
 echo "Compiling the module"
