@@ -5,11 +5,15 @@
 #include <linux/errno.h>
 #include <linux/slab.h>
 #include <mfrc522.h>
+#include <linux/uaccess.h>
+
+#define MFRC522_BUFSIZE 25
 
 MODULE_AUTHOR("Anton VELLA <anton.vella@epita.fr>");
 MODULE_AUTHOR("Martin LEVESQUE <martin.levesque@epita.fr>");
 MODULE_DESCRIPTION("MFRC522 card reader driver");
 MODULE_LICENSE("GPL v2");
+MODULE_SOFTDEP("pre: mfrc522_emu");
 
 /* Structures:
  * - Device structure representing the MFRC522 device
@@ -19,6 +23,7 @@ struct card_dev {
 	struct device *dev;
 	struct mfrc522_dev *mfrc522;
 	struct regmap *regmap;
+	char buf[MFRC522_BUFSIZE];
 };
 
 /* Prototypes for file operations callbacks:
@@ -76,10 +81,27 @@ __init static int gistre_card_init(void)
 	/* Step 3: initialize the cdev structure and add it to the kernel */
 	cdev_init(&g_mfrc522->cdev, &g_fops);
 	g_mfrc522->cdev.owner = THIS_MODULE;
+	memset(g_mfrc522->buf, 0, MFRC522_BUFSIZE);
 	ret = cdev_add(&g_mfrc522->cdev, dev, 1);
 	if (ret < 0) {
 		pr_err("MFRC522: failed to add device to kernel\n");
 		goto free_dev;
+	}
+
+	g_mfrc522->dev = mfrc522_find_dev();
+	if (!g_mfrc522->dev) {
+		pr_err("MFRC522: could not find platform device\n");
+		return -ENODEV;
+	}
+	g_mfrc522->mfrc522 = dev_to_mfrc522(g_mfrc522->dev);
+	if (!g_mfrc522->mfrc522) {
+		pr_err("MFRC522: could not find platform device\n");
+		return -ENODEV;
+	}
+	g_mfrc522->regmap = mfrc522_get_regmap(g_mfrc522->mfrc522);
+	if (!g_mfrc522->regmap) {
+		pr_err("MFRC522: could not find regmap\n");
+		return -ENODEV;
 	}
 
 	pr_info("Hello, GISTRE card !\n");
@@ -117,7 +139,24 @@ static ssize_t mfrc522_read(struct file *file, char __user *buf, size_t len,
 static ssize_t mfrc522_write(struct file *file, const char __user *buf,
 			     size_t len, loff_t *off)
 {
-	return 0;
+	ssize_t ret;
+	char *kbuf = kmalloc(len + 1, GFP_KERNEL);
+	struct card_dev* mfrc522 = (struct card_dev*) file->private_data;
+	(void)off;
+	if (!kbuf)
+		return -ENOMEM;
+
+	memset(kbuf, 0, len + 1);
+	ret = copy_from_user(kbuf, buf, len);
+	if (ret != 0) {
+		pr_err("MFRC522: failed to copy data from user\n");
+		kfree(kbuf);
+		return -EFAULT;
+	}
+
+	pr_info("%s\n", kbuf);
+	kfree(kbuf);
+	return len;
 }
 
 static int mfrc522_open(struct inode *inode, struct file *file)
@@ -135,22 +174,6 @@ static int mfrc522_open(struct inode *inode, struct file *file)
 	i_minor = iminor(inode);
 	if (i_minor != 0) {
 		pr_err("MFRC522: when opening node, found invalid nonzero minor\n");
-		return -ENODEV;
-	}
-
-	g_mfrc522->dev = mfrc522_find_dev();
-	if (!g_mfrc522->dev) {
-		pr_err("MFRC522: could not find platform device\n");
-		return -ENODEV;
-	}
-	g_mfrc522->mfrc522 = dev_to_mfrc522(g_mfrc522->dev);
-	if (!g_mfrc522->mfrc522) {
-		pr_err("MFRC522: could not find platform device\n");
-		return -ENODEV;
-	}
-	g_mfrc522->regmap = mfrc522_get_regmap(g_mfrc522->mfrc522);
-	if (!g_mfrc522->regmap) {
-		pr_err("MFRC522: could not find regmap\n");
 		return -ENODEV;
 	}
 
