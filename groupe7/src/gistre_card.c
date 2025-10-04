@@ -2,8 +2,10 @@
 #include <linux/module.h>
 #include <linux/cdev.h>
 #include <linux/fs.h>
+#include <linux/regmap.h>
 #include <linux/errno.h>
 #include <linux/slab.h>
+#include <linux/string.h>
 #include <mfrc522.h>
 #include <linux/uaccess.h>
 
@@ -141,20 +143,43 @@ static ssize_t mfrc522_write(struct file *file, const char __user *buf,
 {
 	ssize_t ret;
 	char *kbuf = kmalloc(len + 1, GFP_KERNEL);
-	struct card_dev* mfrc522 = (struct card_dev*) file->private_data;
+	struct card_dev *mfrc522 = (struct card_dev *)file->private_data;
 	(void)off;
 	if (!kbuf)
 		return -ENOMEM;
 
 	memset(kbuf, 0, len + 1);
 	ret = copy_from_user(kbuf, buf, len);
+
 	if (ret != 0) {
 		pr_err("MFRC522: failed to copy data from user\n");
 		kfree(kbuf);
 		return -EFAULT;
 	}
 
-	pr_info("%s\n", kbuf);
+	// TODO: check if the register we want to write to is writable cf
+	// https://docs.huihoo.com/doxygen/linux/kernel/3.7/regmap_8c.html#a1f58aacebb9a5c4561216ef1664229d6
+
+	char *command = strsep(&kbuf, ":");
+
+	if (!command) {
+		pr_err("MFRC522: Parse command: failed to extract command\n");
+		kfree(kbuf);
+		return -EFAULT;
+	}
+
+	if (strcmp(command, "mem_write") == 0) {
+		// TODO: memwrite command
+		pr_info("MEM_WRITE\n");
+	} else if (strcmp(command, "mem_write") == 0) {
+		// TODO: mem_read command
+		pr_info("MEM_READ\n");
+	} else {
+		// TODO: unknown command ERROR
+		pr_info("UNKOWN COMMAND\n");
+	}
+
+	pr_info("finished_writing\n");
 	kfree(kbuf);
 	return len;
 }
