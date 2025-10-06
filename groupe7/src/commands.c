@@ -2,17 +2,31 @@
 
 static int mem_write(struct card_dev *mfrc522, char *args)
 {
-	pr_info("mem_write");
+	char *len;
+	char *data;
+
+	len = strsep(&args, ":");
+	data = args;
+
+	// TODO: Make this work I would like to check first if reg is writteable
+	// if (!regmap_writeable(mfrc522->regmap, MFRC522_FIFODATAREG)) {
+	// pr_err("MFRC522: Couldn't write: MFRC522_FIFODATAREG register is not writeable\n");
+	// return -EPERM;
+	// }
+
+	pr_info("%s\n", len);
+	pr_info("%s\n", data);
+	pr_info("mem_write\n");
 	return 0;
 }
 static int mem_read(struct card_dev *mfrc522, char *args)
 {
-	pr_info("mem_read");
+	pr_info("mem_read\n");
 	return 0;
 }
 static int gen_rand_id(struct card_dev *mfrc522, char *args)
 {
-	pr_info("gen_rand_id");
+	pr_info("gen_rand_id\n");
 	return 0;
 }
 
@@ -44,8 +58,10 @@ int command_handle(struct card_dev *mfrc522, char *cmd)
 	}
 
 	command_type = command_dispatch(command);
-	if (command_type == UNKNOWN_CMD)
+	if (command_type == UNKNOWN_CMD) {
+		pr_err("MFRC522: Parse command: unrecognised command\n");
 		return -EINVAL;
+	}
 
 	return commands[command_type](mfrc522, cmd);
 }
