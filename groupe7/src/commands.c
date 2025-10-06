@@ -1,5 +1,27 @@
 #include "commands.h"
 
+static int mem_write(struct card_dev *mfrc522, char *args)
+{
+	pr_info("mem_write");
+	return 0;
+}
+static int mem_read(struct card_dev *mfrc522, char *args)
+{
+	pr_info("mem_read");
+	return 0;
+}
+static int gen_rand_id(struct card_dev *mfrc522, char *args)
+{
+	pr_info("gen_rand_id");
+	return 0;
+}
+
+static const command commands[] = {
+	[MEM_WRITE] = mem_write,
+	[MEM_READ] = mem_read,
+	[GENERATE_RANDOM_ID] = gen_rand_id,
+};
+
 enum type command_dispatch(char *cmd)
 {
 	if (strcmp(cmd, "mem_write") == 0)
@@ -11,7 +33,7 @@ enum type command_dispatch(char *cmd)
 	return UNKNOWN_CMD;
 }
 
-int command_handle(char *cmd)
+int command_handle(struct card_dev *mfrc522, char *cmd)
 {
 	enum type command_type;
 	char *command = strsep(&cmd, ":");
@@ -25,21 +47,5 @@ int command_handle(char *cmd)
 	if (command_type == UNKNOWN_CMD)
 		return -EINVAL;
 
-	return commands[command_type](cmd);
-}
-
-static int mem_write(char *args)
-{
-	pr_info("mem_write");
-	return 0;
-}
-static int mem_read(char *args)
-{
-	pr_info("mem_read");
-	return 0;
-}
-static int gen_rand_id(char *args)
-{
-	pr_info("gen_rand_id");
-	return 0;
+	return commands[command_type](mfrc522, cmd);
 }

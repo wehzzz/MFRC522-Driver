@@ -10,18 +10,8 @@ enum type {
 	GENERATE_RANDOM_ID,
 };
 
-static int mem_write(char *args);
-static int mem_read(char *args);
-static int gen_rand_id(char *args);
+typedef int (*command)(struct card_dev *mfrc522, char *args);
 
-typedef int (*command)(char *args);
-
-static const command commands[] = {
-	[MEM_WRITE] = mem_write,
-	[MEM_READ] = mem_read,
-	[GENERATE_RANDOM_ID] = gen_rand_id,
-};
-
-int command_handle(char *cmd);
+int command_handle(struct card_dev *mfrc522, char *cmd);
 
 #endif /* ! COMMANDS_H */

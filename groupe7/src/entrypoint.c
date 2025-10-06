@@ -116,7 +116,7 @@ static ssize_t mfrc522_read(struct file *file, char __user *buf, size_t len,
 static ssize_t mfrc522_write(struct file *file, const char __user *buf,
 			     size_t len, loff_t *off)
 {
-	ssize_t ret;
+	int ret;
 	char *kbuf = kmalloc(len + 1, GFP_KERNEL);
 	struct card_dev *mfrc522 = (struct card_dev *)file->private_data;
 	(void)off;
@@ -124,9 +124,8 @@ static ssize_t mfrc522_write(struct file *file, const char __user *buf,
 		return -ENOMEM;
 
 	memset(kbuf, 0, len + 1);
-	ret = copy_from_user(kbuf, buf, len);
 
-	if (ret != 0) {
+	if (copy_from_user(kbuf, buf, len) != 0) {
 		pr_err("MFRC522: failed to copy data from user\n");
 		kfree(kbuf);
 		return -EFAULT;
@@ -135,10 +134,9 @@ static ssize_t mfrc522_write(struct file *file, const char __user *buf,
 	// TODO: check if the register we want to write to is writable cf
 	// https://docs.huihoo.com/doxygen/linux/kernel/3.7/regmap_8c.html#a1f58aacebb9a5c4561216ef1664229d6
 
-	int ret_code;
-	if ((ret_code = command_handle(kbuf)) < 0) {
+	if ((ret = command_handle(mfrc522, kbuf)) < 0) {
 		kfree(kbuf);
-		return ret_code;
+		return ret;
 	}
 
 	pr_info("finished_writing\n");
