@@ -18,15 +18,15 @@ int command_handler(char *cmd)
 	return 0;
 }
 
-int mem_write(void)
+static int mem_write(void)
 {
 	return 0;
 }
-int mem_read(void)
+static int mem_read(void)
 {
 	return 0;
 }
-int gen_rand_id(void)
+static int gen_rand_id(void)
 {
 	return 0;
 }

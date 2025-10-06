@@ -1,8 +1,5 @@
-#include <linux/slab.h>
-#include <linux/string.h>
-#include "mfrc522.h"
 #include "entrypoint.h"
-#include <linux/uaccess.h>
+#include "mfrc522.h"
 
 /* Prototypes for file operations callbacks:
  * - read/write   : data transfer between user space and the device
@@ -188,3 +185,9 @@ static int mfrc522_release(struct inode *inode, struct file *file)
 	(void)file;
 	return 0;
 }
+
+/* Module metadata */
+MODULE_LICENSE("GPL v2");
+MODULE_AUTHOR("Anton VELLA <anton.vella@epita.fr>");
+MODULE_AUTHOR("Martin LEVESQUE <martin.levesque@epita.fr>");
+MODULE_DESCRIPTION("MFRC522 card reader driver");
