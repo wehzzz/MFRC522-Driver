@@ -2,22 +2,32 @@
 
 static int mem_write(struct card_dev *mfrc522, char *args)
 {
-	char *len;
+	char *len_arg;
 	char *data;
+	unsigned len;
+	int ret;
 
-	len = strsep(&args, ":");
+	len_arg = strsep(&args, ":");
+	if (!len_arg) {
+		pr_err("MFRC522: Parse command: failed to extract length\n");
+		return -EINVAL;
+	}
+	if (kstrtou32(len_arg, 10, &len) != 0) {
+		pr_err("MFRC522: Parse command: failed to convert length to unsigned\n");
+		return -EINVAL;
+	}
+	len = (len > MFRC522_BUFSIZE) ? MFRC522_BUFSIZE : len;
 	data = args;
 
-	// TODO: Make this work I would like to check first if reg is writteable
-	// if (!regmap_writeable(mfrc522->regmap, MFRC522_FIFODATAREG)) {
-	// pr_err("MFRC522: Couldn't write: MFRC522_FIFODATAREG register is not writeable\n");
-	// return -EPERM;
-	// }
+	memcpy(mfrc522->buf, data, len);
+	memset(mfrc522->buf + len, 0, MFRC522_BUFSIZE - len);
 
-	pr_info("%s\n", len);
-	pr_info("%s\n", data);
-	pr_info("mem_write\n");
-	return 0;
+	if ((ret = regmap_bulk_write(mfrc522->regmap, MFRC522_FIFODATAREG,
+				     mfrc522->buf, len)) < 0) {
+		pr_err("MFRC522: failed to write data to FIFO\n");
+		return ret;
+	}
+	return len;
 }
 static int mem_read(struct card_dev *mfrc522, char *args)
 {

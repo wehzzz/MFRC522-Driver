@@ -1,7 +1,6 @@
 #include "entrypoint.h"
 
 #include "commands.h"
-#include "mfrc522.h"
 
 /* Prototypes for file operations callbacks:
  * - read/write   : data transfer between user space and the device
