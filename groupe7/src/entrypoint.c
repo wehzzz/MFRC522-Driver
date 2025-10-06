@@ -1,4 +1,6 @@
 #include "entrypoint.h"
+
+#include "commands.h"
 #include "mfrc522.h"
 
 /* Prototypes for file operations callbacks:
@@ -133,23 +135,10 @@ static ssize_t mfrc522_write(struct file *file, const char __user *buf,
 	// TODO: check if the register we want to write to is writable cf
 	// https://docs.huihoo.com/doxygen/linux/kernel/3.7/regmap_8c.html#a1f58aacebb9a5c4561216ef1664229d6
 
-	char *command = strsep(&kbuf, ":");
-
-	if (!command) {
-		pr_err("MFRC522: Parse command: failed to extract command\n");
+	int ret_code;
+	if ((ret_code = command_handle(kbuf)) < 0) {
 		kfree(kbuf);
-		return -EFAULT;
-	}
-
-	if (strcmp(command, "mem_write") == 0) {
-		// TODO: memwrite command
-		pr_info("MEM_WRITE\n");
-	} else if (strcmp(command, "mem_write") == 0) {
-		// TODO: mem_read command
-		pr_info("MEM_READ\n");
-	} else {
-		// TODO: unknown command ERROR
-		pr_info("UNKOWN COMMAND\n");
+		return ret_code;
 	}
 
 	pr_info("finished_writing\n");
