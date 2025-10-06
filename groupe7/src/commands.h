@@ -4,16 +4,17 @@
 #include "entrypoint.h"
 
 enum type {
+	UNKNOWN_CMD = 0,
 	MEM_WRITE,
 	MEM_READ,
 	GENERATE_RANDOM_ID,
 };
 
-static int mem_write(void);
-static int mem_read(void);
-static int gen_rand_id(void);
+static int mem_write(char *args);
+static int mem_read(char *args);
+static int gen_rand_id(char *args);
 
-typedef int (*command)(void);
+typedef int (*command)(char *args);
 
 static const command commands[] = {
 	[MEM_WRITE] = mem_write,

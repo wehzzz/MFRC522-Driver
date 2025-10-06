@@ -2,6 +2,18 @@
 
 enum type command_dispatch(char *cmd)
 {
+	if (strcmp(cmd, "mem_write") == 0)
+		return MEM_WRITE;
+	else if (strcmp(cmd, "mem_read") == 0)
+		return MEM_READ;
+	else if (strcmp(cmd, "gen_rand_id") == 0)
+		return GENERATE_RANDOM_ID;
+	return UNKNOWN_CMD;
+}
+
+int command_handle(char *cmd)
+{
+	enum type command_type;
 	char *command = strsep(&cmd, ":");
 
 	if (!command) {
@@ -9,33 +21,24 @@ enum type command_dispatch(char *cmd)
 		return -EFAULT;
 	}
 
-	if (strcmp(command, "mem_write") == 0)
-		return MEM_WRITE;
-	else if (strcmp(command, "mem_read") == 0)
-		return MEM_READ;
-	else if (strcmp(command, "gen_rand_id") == 0)
-		return GENERATE_RANDOM_ID;
-	return -EINVAL;
+	command_type = command_dispatch(command);
+	if (command_type == UNKNOWN_CMD)
+		return -EINVAL;
+
+	return commands[command_type](cmd);
 }
 
-int command_handle(char *cmd)
-{
-	enum type command_type = command_dispatch(cmd);
-	commands[command_type]();
-	return 0;
-}
-
-static int mem_write(void)
+static int mem_write(char *args)
 {
 	pr_info("mem_write");
 	return 0;
 }
-static int mem_read(void)
+static int mem_read(char *args)
 {
 	pr_info("mem_read");
 	return 0;
 }
-static int gen_rand_id(void)
+static int gen_rand_id(char *args)
 {
 	pr_info("gen_rand_id");
 	return 0;
