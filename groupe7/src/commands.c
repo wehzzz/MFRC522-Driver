@@ -22,18 +22,23 @@ static int mem_write(struct card_dev *mfrc522, char *args)
 	memcpy(mfrc522->buf, data, len);
 	memset(mfrc522->buf + len, 0, MFRC522_BUFSIZE - len);
 
-	if ((ret = regmap_bulk_write(mfrc522->regmap, MFRC522_FIFODATAREG,
-				     mfrc522->buf, len)) < 0) {
-		pr_err("MFRC522: failed to write data to FIFO\n");
-		return ret;
+	for (int i = 0; i < MFRC522_BUFSIZE; i++) {
+		if ((ret = regmap_write(mfrc522->regmap, MFRC522_FIFODATAREG,
+					mfrc522->buf[i])) < 0) {
+			pr_err("MFRC522: failed to write data to FIFO\n");
+			return ret;
+		}
 	}
+
 	return len;
 }
+
 static int mem_read(struct card_dev *mfrc522, char *args)
 {
 	pr_info("mem_read\n");
 	return 0;
 }
+
 static int gen_rand_id(struct card_dev *mfrc522, char *args)
 {
 	pr_info("gen_rand_id\n");
