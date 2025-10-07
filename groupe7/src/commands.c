@@ -35,6 +35,13 @@ static int mem_write(struct card_dev *mfrc522, char *args)
 			return ret;
 		}
 	}
+
+	if ((ret = regmap_write(mfrc522->regmap, MFRC522_CMDREG, MFRC522_MEM)) <
+	    0) {
+		pr_err("MFRC522: failed to write FIFO to internal memory\n");
+		return ret;
+	}
+
 	return len;
 }
 
@@ -42,6 +49,19 @@ static int mem_read(struct card_dev *mfrc522, char *args)
 {
 	int ret;
 	int value;
+
+	if ((ret = regmap_write(mfrc522->regmap, MFRC522_FIFOLEVELREG,
+				FIFO_RESET)) < 0) {
+		pr_err("MFRC522: failed to flush FIFO\n");
+		return ret;
+	}
+
+	if ((ret = regmap_write(mfrc522->regmap, MFRC522_CMDREG, MFRC522_MEM)) <
+	    0) {
+		pr_err("MFRC522: failed to write internal memory to FIFO\n");
+		return ret;
+	}
+
 	for (int i = 0; i < MFRC522_BUFSIZE; i++) {
 		if ((ret = regmap_read(mfrc522->regmap, MFRC522_FIFODATAREG,
 				       &value)) < 0) {

@@ -3,6 +3,8 @@
 
 #include "entrypoint.h"
 
+#define FIFO_RESET 0x80
+
 enum type {
 	UNKNOWN_CMD = 0,
 	MEM_WRITE,
