@@ -10,6 +10,7 @@
 #include <linux/fs.h>
 #include <linux/regmap.h>
 #include <linux/errno.h>
+#include <linux/of.h>
 #include "mfrc522.h"
 
 #define MFRC522_BUFSIZE 25

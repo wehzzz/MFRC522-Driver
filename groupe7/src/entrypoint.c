@@ -27,6 +27,22 @@ static struct file_operations g_fops = {
 	.release = mfrc522_release,
 };
 
+static int print_version(struct card_dev *mfrc522)
+{
+	int ret;
+	unsigned int version;
+	char *property = "version";
+
+	if ((ret = of_property_read_u32(g_mfrc522->dev->of_node, property,
+					&version)) < 0) {
+		pr_err("MFRC522: could not retrieve version property\n");
+		return ret;
+	}
+
+	pr_info("MFRC522: version v%u\n", version);
+	return 0;
+}
+
 /*
  * Function declaration
  */
@@ -67,22 +83,27 @@ __init static int gistre_card_init(void)
 	g_mfrc522->dev = mfrc522_find_dev();
 	if (!g_mfrc522->dev) {
 		pr_err("MFRC522: could not find platform device\n");
-		return -ENODEV;
+		goto error_handle;
 	}
 	g_mfrc522->mfrc522 = dev_to_mfrc522(g_mfrc522->dev);
 	if (!g_mfrc522->mfrc522) {
 		pr_err("MFRC522: could not find platform device\n");
-		return -ENODEV;
+		goto error_handle;
 	}
 	g_mfrc522->regmap = mfrc522_get_regmap(g_mfrc522->mfrc522);
 	if (!g_mfrc522->regmap) {
 		pr_err("MFRC522: could not find regmap\n");
-		return -ENODEV;
+		goto error_handle;
 	}
+
+	if (print_version(g_mfrc522) < 0)
+		goto error_handle;
 
 	pr_info("Hello, GISTRE card !\n");
 	goto end;
 
+error_handle:
+	ret = -ENODEV;
 free_dev:
 	kfree(g_mfrc522);
 unregister_dev:
