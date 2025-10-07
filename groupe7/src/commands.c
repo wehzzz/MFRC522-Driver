@@ -6,6 +6,7 @@ static int mem_write(struct card_dev *mfrc522, char *args)
 	char *data;
 	unsigned len;
 	int ret;
+	int i = 0;
 
 	len_arg = strsep(&args, ":");
 	if (!len_arg) {
@@ -19,17 +20,21 @@ static int mem_write(struct card_dev *mfrc522, char *args)
 	len = (len > MFRC522_BUFSIZE) ? MFRC522_BUFSIZE : len;
 	data = args;
 
-	memcpy(mfrc522->buf, data, len);
-	memset(mfrc522->buf + len, 0, MFRC522_BUFSIZE - len);
-
-	for (int i = 0; i < MFRC522_BUFSIZE; i++) {
+	for (; i < len; i++) {
 		if ((ret = regmap_write(mfrc522->regmap, MFRC522_FIFODATAREG,
-					mfrc522->buf[i])) < 0) {
+					data[i])) < 0) {
 			pr_err("MFRC522: failed to write data to FIFO\n");
 			return ret;
 		}
 	}
 
+	for (; i < MFRC522_BUFSIZE; i++) {
+		if ((ret = regmap_write(mfrc522->regmap, MFRC522_FIFODATAREG,
+					'\0')) < 0) {
+			pr_err("MFRC522: failed to write data to FIFO\n");
+			return ret;
+		}
+	}
 	return len;
 }
 
