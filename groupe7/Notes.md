@@ -17,3 +17,5 @@ MODULE_DESCRIPTION("MFRC522 card reader driver");
 
 - Where to write / read ? We are looking for any info regarding the registers to look at
   Answer: we believe it is the MFRC522_FIFODATAREG but not sure.
+
+- Should we fill buffer with zeros at dev init to avoid UB?

@@ -22,7 +22,7 @@ struct card_dev {
 	struct device *dev;
 	struct mfrc522_dev *mfrc522;
 	struct regmap *regmap;
-	char buf[MFRC522_BUFSIZE];
+	char buf[MFRC522_BUFSIZE + 1]; /* trailing NUL */
 };
 
 #endif /* ! GISTRE_CARD_H */

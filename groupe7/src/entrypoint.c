@@ -109,16 +109,42 @@ module_exit(gistre_card_exit);
 static ssize_t mfrc522_read(struct file *file, char __user *buf, size_t len,
 			    loff_t *off)
 {
-	return 0;
+	size_t buf_len;
+	struct card_dev *mfrc522;
+
+	(void)off;
+
+	mfrc522 = (struct card_dev *)file->private_data;
+	buf_len = strlen(mfrc522->buf);
+
+	if (len < buf_len) {
+		pr_err("MFRC522: When copying data to user, did not find enough buffer space\n");
+		return -ENOSPC;
+	}
+
+	len = min(len, buf_len);
+
+	if (copy_to_user(buf, mfrc522->buf, len)) {
+		pr_err("MFRC522: When copying data to user, failed memory copy verification\n");
+		return -EFAULT;
+	}
+	memset(mfrc522->buf, 0, MFRC522_BUFSIZE + 1);
+
+	return len;
 }
 
 static ssize_t mfrc522_write(struct file *file, const char __user *buf,
 			     size_t len, loff_t *off)
 {
 	int ret;
-	char *kbuf = kmalloc(len + 1, GFP_KERNEL);
-	struct card_dev *mfrc522 = (struct card_dev *)file->private_data;
+	struct card_dev *mfrc522;
+	char *kbuf;
+
 	(void)off;
+
+	mfrc522 = (struct card_dev *)file->private_data;
+	kbuf = kmalloc(len + 1, GFP_KERNEL);
+
 	if (!kbuf)
 		return -ENOMEM;
 
@@ -130,15 +156,11 @@ static ssize_t mfrc522_write(struct file *file, const char __user *buf,
 		return -EFAULT;
 	}
 
-	// TODO: check if the register we want to write to is writable cf
-	// https://docs.huihoo.com/doxygen/linux/kernel/3.7/regmap_8c.html#a1f58aacebb9a5c4561216ef1664229d6
-
 	if ((ret = command_handle(mfrc522, kbuf)) < 0) {
 		kfree(kbuf);
 		return ret;
 	}
 
-	pr_info("finished_writing\n");
 	kfree(kbuf);
 	return len;
 }
