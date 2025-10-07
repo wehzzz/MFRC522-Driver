@@ -35,8 +35,18 @@ static int mem_write(struct card_dev *mfrc522, char *args)
 
 static int mem_read(struct card_dev *mfrc522, char *args)
 {
-	pr_info("mem_read\n");
-	return 0;
+	int ret;
+	int value;
+	for (int i = 0; i < MFRC522_BUFSIZE; i++) {
+		if ((ret = regmap_read(mfrc522->regmap, MFRC522_FIFODATAREG,
+				       &value)) < 0) {
+			pr_err("MFRC522: failed to read data from FIFO\n");
+			return ret;
+		}
+		mfrc522->buf[i] = value;
+	}
+
+	return 25;
 }
 
 static int gen_rand_id(struct card_dev *mfrc522, char *args)
