@@ -18,6 +18,13 @@ MODULE_DESCRIPTION("MFRC522 card reader driver");
 - Where to write / read ? We are looking for any info regarding the registers to look at
   Answer: we believe it is the MFRC522_FIFODATAREG but not sure.
 
-- Should we fill buffer with zeros at dev init to avoid UB?
+- Should we fill buffer with zeros at dev init to avoid UB? Do we have to softreset the mfrc522 ?
+
+- is it a problem ?
+```
+# echo -n mem_read > /dev/card1
+# cat /dev/card1
+@�u�}3���#
+```
 
 - Do we have to support multiple devices for BONUS 1
