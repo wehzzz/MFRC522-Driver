@@ -19,3 +19,5 @@ MODULE_DESCRIPTION("MFRC522 card reader driver");
   Answer: we believe it is the MFRC522_FIFODATAREG but not sure.
 
 - Should we fill buffer with zeros at dev init to avoid UB?
+
+- Do we have to support multiple devices for BONUS 1
