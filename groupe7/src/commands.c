@@ -71,13 +71,20 @@ static int mem_read(struct card_dev *mfrc522, char *args)
 		mfrc522->buf[i] = value;
 	}
 
-	return 25;
+	return MFRC522_BUFSIZE;
 }
 
 static int gen_rand_id(struct card_dev *mfrc522, char *args)
 {
-	pr_info("gen_rand_id\n");
-	return 0;
+	int ret;
+
+	if ((ret = regmap_write(mfrc522->regmap, MFRC522_CMDREG,
+				MFRC522_GENERATERANDOMID)) < 0) {
+		pr_err("MFRC522: failed to write GENERATERANDOMID command to register\n");
+		return ret;
+	}
+
+	return MFRC522_BUFSIZE;
 }
 
 static const command commands[] = {
