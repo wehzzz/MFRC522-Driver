@@ -3,13 +3,12 @@
 
 #include "entrypoint.h"
 
-#define FIFO_RESET 0x80
-
 enum type {
 	UNKNOWN_CMD = 0,
 	MEM_WRITE,
 	MEM_READ,
 	GENERATE_RANDOM_ID,
+	DEBUG,
 };
 
 typedef int (*command)(struct card_dev *mfrc522, char *args);

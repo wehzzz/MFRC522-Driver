@@ -11,6 +11,7 @@
 #include <linux/regmap.h>
 #include <linux/errno.h>
 #include <linux/of.h>
+#include <linux/types.h>
 #include "mfrc522.h"
 
 #define MFRC522_BUFSIZE 25
@@ -24,6 +25,7 @@ struct card_dev {
 	struct mfrc522_dev *mfrc522;
 	struct regmap *regmap;
 	char buf[MFRC522_BUFSIZE + 1]; /* trailing NUL */
+	bool debug;
 };
 
 #endif /* ! GISTRE_CARD_H */
