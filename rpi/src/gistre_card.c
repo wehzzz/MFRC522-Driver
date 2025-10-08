@@ -1,0 +1,2 @@
+MODULE_SOFTDEP("pre: mfrc522_emu");
+MODULE_LICENSE("GPL v2");

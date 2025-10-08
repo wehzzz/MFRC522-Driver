@@ -6,3 +6,4 @@ gistre26-dril-sdk/
 *.mod.c
 *.ko
 .*
+rpi/linux
