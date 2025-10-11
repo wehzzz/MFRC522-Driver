@@ -222,6 +222,13 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c1_pins>;
 	clock-frequency = <100000>;
+	status = "okay";
+
+	mfrc522: mfrc522@28{
+		compatible = "nxp,mfrc522";
+		reg = <0x28>;
+		status = "okay";
+	};
 };
 
 &i2c2 {

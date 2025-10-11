@@ -50,6 +50,37 @@ sudo umount mnt/boot
 sudo umount mnt/root
 ```
 
+### Edit Device Tree
+```
+&i2c1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c1_pins>;
+	clock-frequency = <100000>;
+	status = "okay";
+
+	mfrc522: mfrc522@28{
+		compatible = "nxp,mfrc522";
+		reg = <0x28>;
+		status = "okay";
+	};
+};
+```
+then
+```
+make -j12 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- dtbs
+```
+
+### Config
+Put thos lines in the config.txt present in the SD card:
+```
+enable_uart=1
+arm_64bit=0
+uart_2ndstage=1
+kernel=kernel7.img
+device_tree=bcm2710-rpi-3-b-plus.dtb
+dtparam=i2c_arm=on
+```
+
 # SSH
 
 I connected mi RPI3b+ to my computer via ethernet. Make sure to share your wifi connection.
@@ -62,5 +93,5 @@ ip link set eth0 up
 
 then you can use scp to transfer your file to the RPI
 ```
-scp MFRC522-Driver/rpi/src/test.ko  pi@192.168.137.2:/home/pi/
+scp mfrc522.ko pi@192.168.137.2:/home/pi/
 ```

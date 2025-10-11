@@ -1,7 +1,9 @@
 PWD := $(shell pwd)
-obj-m += test.o
+KVERSION := 6.12.51-v7+
+KDIR := /lib/modules/$(KVERSION)/build
 ccflags-y := -std=gnu11
-KDIR := /lib/modules/6.12.51-v7+/build
+obj-m += mfrc522.o
+mfrc522-y := mfrc522_core.o
 
 default: modules
 modules clean:
