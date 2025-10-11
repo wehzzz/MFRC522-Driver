@@ -73,7 +73,7 @@ __init static int gistre_card_init(void)
 	/* Step 3: initialize the cdev structure and add it to the kernel */
 	cdev_init(&g_mfrc522->cdev, &g_fops);
 	g_mfrc522->cdev.owner = THIS_MODULE;
-	g_mfrc522->debug = false;
+	g_mfrc522->debug = 0;
 	memset(g_mfrc522->buf, 0, MFRC522_BUFSIZE);
 	ret = cdev_add(&g_mfrc522->cdev, dev, 1);
 	if (ret < 0) {

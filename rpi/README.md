@@ -1,21 +1,21 @@
 # Compile Kernel for RPI
 ## Download sources
 ```sh
-git clone --depth=1 https://github.com/raspberrypi/linux
+git clone --depth=1 https://github.com/raspberrypi/linux.git
 ```
 
 ## Install required dependencies and toolchain
 ```sh
 sudo apt install bc bison flex libssl-dev make libc6-dev libncurses5-dev
-sudo apt install crossbuild-essential-arm64
+sudo apt install crossbuild-essential-armhf
 ```
 
 ## Build configuration
 ```sh
 cd linux
-KERNEL=kernel8
-make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- bcm2711_defconfig
-make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- Image modules dtbs
+KERNEL=kernel7
+make -j12 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- bcm2709_defconfig
+make -j12 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- zImage modules dtbs
 ```
 
 ## Install the kernel
@@ -34,18 +34,33 @@ First, mount these partitions as mnt/boot and mnt/root, adjusting the partition 
 mkdir mnt
 mkdir mnt/boot
 mkdir mnt/root
-sudo mount /dev/sdb1 mnt/boot
-sudo mount /dev/sdb2 mnt/root
+sudo mount /dev/sde1 mnt/boot
+sudo mount /dev/sde2 mnt/root
 ```
 
 ### Install
 ```
-sudo env PATH=$PATH make -j12 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- INSTALL_MOD_PATH=mnt/root modules_install
+sudo make -j12 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=mnt/root modules_install
 sudo cp mnt/boot/$KERNEL.img mnt/boot/$KERNEL-backup.img
-sudo cp arch/arm64/boot/Image mnt/boot/$KERNEL.img
-sudo cp arch/arm64/boot/dts/broadcom/*.dtb mnt/boot/
-sudo cp arch/arm64/boot/dts/overlays/*.dtb* mnt/boot/overlays/
-sudo cp arch/arm64/boot/dts/overlays/README mnt/boot/overlays/
+sudo cp arch/arm/boot/zImage mnt/boot/$KERNEL.img
+sudo cp arch/arm/boot/dts/broadcom/*.dtb mnt/boot/
+sudo cp arch/arm/boot/dts/overlays/*.dtb* mnt/boot/overlays/
+sudo cp arch/arm/boot/dts/overlays/README mnt/boot/overlays/
 sudo umount mnt/boot
 sudo umount mnt/root
+```
+
+# SSH
+
+I connected mi RPI3b+ to my computer via ethernet. Make sure to share your wifi connection.
+My ethernet's ip is `192.168.137.1` so i just did the following commands on the RPI:
+```
+ip addr flush dev eth0
+ip addr add 192.168.137.2/24 dev eth0
+ip link set eth0 up
+```
+
+then you can use scp to transfer your file to the RPI
+```
+scp MFRC522-Driver/rpi/src/test.ko  pi@192.168.137.2:/home/pi/
 ```

@@ -1,7 +1,7 @@
 PWD := $(shell pwd)
-obj-m += gistre_card.o
-gistre_card-y := entrypoint.o commands.o debug.o
+obj-m += test.o
 ccflags-y := -std=gnu11
+KDIR := /lib/modules/6.12.51-v7+/build
 
 default: modules
 modules clean:
