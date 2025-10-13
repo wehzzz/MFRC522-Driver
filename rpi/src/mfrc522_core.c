@@ -191,7 +191,7 @@ static void mfrc522_remove(struct i2c_client *client)
 }
 
 static const struct of_device_id mfrc522_dt_id[] = { { .compatible =
-							       "npx,mfrc522" },
+							       "nxp,mfrc522" },
 						     {} };
 MODULE_DEVICE_TABLE(of, mfrc522_dt_id);
 

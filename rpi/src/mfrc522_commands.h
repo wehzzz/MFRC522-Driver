@@ -2,6 +2,7 @@
 #define COMMANDS_H
 
 #include "mfrc522_core.h"
+#include "mfrc522_i2c.h"
 
 enum type {
 	UNKNOWN_CMD = 0,

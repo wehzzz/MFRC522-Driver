@@ -26,10 +26,9 @@ int print_version(struct mfrc522_dev *mfrc522)
 {
 	int ret;
 	unsigned int version;
-	char *property = "version";
 
-	if ((ret = of_property_read_u32(mfrc522->dev->of_node, property,
-					&version)) < 0) {
+	if ((ret = of_property_read_u32(mfrc522->dev->of_node,
+					MFRC522_PROP_VERSION, &version)) < 0) {
 		pr_err("MFRC522: could not retrieve version property\n");
 		return ret;
 	}
@@ -60,30 +59,29 @@ static int mem_write(struct mfrc522_dev *mfrc522, char *args)
 	data = args;
 
 	for (; i < len; i++) {
-		/* if ((ret = regmap_write(mfrc522->regmap, MFRC522_FIFODATAREG,
-					data[i])) < 0) {
+		if ((ret = i2c_write_byte(mfrc522->client, MFRC522_FIFODATAREG,
+					  data[i])) < 0) {
 			pr_err("MFRC522: failed to write data to FIFO\n");
 			return ret;
-		}*/
+		}
+		pr_info("WRITE\n");
 		debug_str[i] = data[i];
 	}
 
 	for (; i < MFRC522_BUFSIZE; i++) {
-		/* if ((ret = regmap_write(mfrc522->regmap, MFRC522_FIFODATAREG,
-					'\0')) < 0) {
+		if ((ret = i2c_write_byte(mfrc522->client, MFRC522_FIFODATAREG,
+					  '\0')) < 0) {
 			pr_err("MFRC522: failed to write data to FIFO\n");
 			return ret;
-		} */
+		}
 		debug_str[i] = '\0';
 	}
 
-	/*
-	if ((ret = regmap_write(mfrc522->regmap, MFRC522_CMDREG, MFRC522_MEM)) <
-	    0) {
+	if ((ret = i2c_write_byte(mfrc522->client, MFRC522_CMDREG,
+				  MFRC522_MEM)) < 0) {
 		pr_err("MFRC522: failed to write FIFO to internal memory\n");
 		return ret;
 	}
-	*/
 
 	if (mfrc522->debug)
 		debug_log(MEM_WRITE, debug_str);
@@ -94,27 +92,26 @@ static int mem_write(struct mfrc522_dev *mfrc522, char *args)
 static int mem_read(struct mfrc522_dev *mfrc522, char *args)
 {
 	int ret;
-	int value;
+	u8 value;
 
-	/*
-	if ((ret = regmap_write(mfrc522->regmap, MFRC522_FIFOLEVELREG,
-				MFRC522_FIFOLEVELREG_FLUSH)) < 0) {
+	if ((ret = i2c_write_byte(mfrc522->client, MFRC522_FIFOLEVELREG,
+				  MFRC522_FIFOLEVELREG_FLUSH)) < 0) {
 		pr_err("MFRC522: failed to flush FIFO\n");
 		return ret;
 	}
 
-	if ((ret = regmap_write(mfrc522->regmap, MFRC522_CMDREG, MFRC522_MEM)) <
-	    0) {
+	if ((ret = i2c_write_byte(mfrc522->client, MFRC522_CMDREG,
+				  MFRC522_MEM)) < 0) {
 		pr_err("MFRC522: failed to write internal memory to FIFO\n");
 		return ret;
-	} */
+	}
 
 	for (int i = 0; i < MFRC522_BUFSIZE; i++) {
-		/*if ((ret = regmap_read(mfrc522->regmap, MFRC522_FIFODATAREG,
-				       &value)) < 0) {
+		if ((ret = i2c_read_byte(mfrc522->client, MFRC522_FIFODATAREG,
+					 &value)) < 0) {
 			pr_err("MFRC522: failed to read data from FIFO\n");
 			return ret;
-		}*/
+		}
 		mfrc522->buf[i] = value;
 	}
 
@@ -128,12 +125,11 @@ static int gen_rand_id(struct mfrc522_dev *mfrc522, char *args)
 {
 	int ret;
 
-	/*
-	if ((ret = regmap_write(mfrc522->regmap, MFRC522_CMDREG,
-				MFRC522_GENERATERANDOMID)) < 0) {
+	if ((ret = i2c_write_byte(mfrc522->client, MFRC522_CMDREG,
+				  MFRC522_GENERATERANDOMID)) < 0) {
 		pr_err("MFRC522: failed to write GENERATERANDOMID command to register\n");
 		return ret;
-	}*/
+	}
 
 	return MFRC522_BUFSIZE;
 }
