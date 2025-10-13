@@ -227,6 +227,7 @@
 	mfrc522: mfrc522@28{
 		compatible = "nxp,mfrc522";
 		reg = <0x28>;
+		version = <0x01>;
 		status = "okay";
 	};
 };

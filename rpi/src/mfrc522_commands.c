@@ -1,7 +1,7 @@
-#include "commands.h"
-#include "debug.h"
+#include "mfrc522_commands.h"
+#include "mfrc522_debug.h"
 
-static int debug(struct card_dev *mfrc522, char *args)
+static int debug(struct mfrc522_dev *mfrc522, char *args)
 {
 	char *debug_mode;
 
@@ -22,7 +22,23 @@ static int debug(struct card_dev *mfrc522, char *args)
 	return 0;
 }
 
-static int mem_write(struct card_dev *mfrc522, char *args)
+int print_version(struct mfrc522_dev *mfrc522)
+{
+	int ret;
+	unsigned int version;
+	char *property = "version";
+
+	if ((ret = of_property_read_u32(mfrc522->dev->of_node, property,
+					&version)) < 0) {
+		pr_err("MFRC522: could not retrieve version property\n");
+		return ret;
+	}
+
+	pr_info("MFRC522: version v%u\n", version);
+	return 0;
+}
+
+static int mem_write(struct mfrc522_dev *mfrc522, char *args)
 {
 	char *len_arg;
 	char *data;
@@ -44,28 +60,30 @@ static int mem_write(struct card_dev *mfrc522, char *args)
 	data = args;
 
 	for (; i < len; i++) {
-		if ((ret = regmap_write(mfrc522->regmap, MFRC522_FIFODATAREG,
+		/* if ((ret = regmap_write(mfrc522->regmap, MFRC522_FIFODATAREG,
 					data[i])) < 0) {
 			pr_err("MFRC522: failed to write data to FIFO\n");
 			return ret;
-		}
+		}*/
 		debug_str[i] = data[i];
 	}
 
 	for (; i < MFRC522_BUFSIZE; i++) {
-		if ((ret = regmap_write(mfrc522->regmap, MFRC522_FIFODATAREG,
+		/* if ((ret = regmap_write(mfrc522->regmap, MFRC522_FIFODATAREG,
 					'\0')) < 0) {
 			pr_err("MFRC522: failed to write data to FIFO\n");
 			return ret;
-		}
+		} */
 		debug_str[i] = '\0';
 	}
 
+	/*
 	if ((ret = regmap_write(mfrc522->regmap, MFRC522_CMDREG, MFRC522_MEM)) <
 	    0) {
 		pr_err("MFRC522: failed to write FIFO to internal memory\n");
 		return ret;
 	}
+	*/
 
 	if (mfrc522->debug)
 		debug_log(MEM_WRITE, debug_str);
@@ -73,11 +91,12 @@ static int mem_write(struct card_dev *mfrc522, char *args)
 	return len;
 }
 
-static int mem_read(struct card_dev *mfrc522, char *args)
+static int mem_read(struct mfrc522_dev *mfrc522, char *args)
 {
 	int ret;
 	int value;
 
+	/*
 	if ((ret = regmap_write(mfrc522->regmap, MFRC522_FIFOLEVELREG,
 				MFRC522_FIFOLEVELREG_FLUSH)) < 0) {
 		pr_err("MFRC522: failed to flush FIFO\n");
@@ -88,14 +107,14 @@ static int mem_read(struct card_dev *mfrc522, char *args)
 	    0) {
 		pr_err("MFRC522: failed to write internal memory to FIFO\n");
 		return ret;
-	}
+	} */
 
 	for (int i = 0; i < MFRC522_BUFSIZE; i++) {
-		if ((ret = regmap_read(mfrc522->regmap, MFRC522_FIFODATAREG,
+		/*if ((ret = regmap_read(mfrc522->regmap, MFRC522_FIFODATAREG,
 				       &value)) < 0) {
 			pr_err("MFRC522: failed to read data from FIFO\n");
 			return ret;
-		}
+		}*/
 		mfrc522->buf[i] = value;
 	}
 
@@ -105,15 +124,16 @@ static int mem_read(struct card_dev *mfrc522, char *args)
 	return MFRC522_BUFSIZE;
 }
 
-static int gen_rand_id(struct card_dev *mfrc522, char *args)
+static int gen_rand_id(struct mfrc522_dev *mfrc522, char *args)
 {
 	int ret;
 
+	/*
 	if ((ret = regmap_write(mfrc522->regmap, MFRC522_CMDREG,
 				MFRC522_GENERATERANDOMID)) < 0) {
 		pr_err("MFRC522: failed to write GENERATERANDOMID command to register\n");
 		return ret;
-	}
+	}*/
 
 	return MFRC522_BUFSIZE;
 }
@@ -138,7 +158,7 @@ static enum type command_dispatch(char *cmd)
 	return UNKNOWN_CMD;
 }
 
-int command_handle(struct card_dev *mfrc522, char *cmd)
+int command_handle(struct mfrc522_dev *mfrc522, char *cmd)
 {
 	enum type command_type;
 	char *command = strsep(&cmd, ":");

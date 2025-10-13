@@ -1,4 +1,4 @@
-#include "debug.h"
+#include "mfrc522_debug.h"
 
 void debug_log(enum type cmd, const char *buf)
 {

@@ -16,4 +16,15 @@
 #define DEVICE_NAME "mfrc522"
 #define MFRC522_BUFSIZE 25
 
+/* Structures:
+ * - Device structure representing the MFRC522 device
+ */
+struct mfrc522_dev {
+	struct cdev cdev;
+	struct device *dev;
+	//struct regmap *regmap;
+	char buf[MFRC522_BUFSIZE + 1]; /* trailing NUL */
+	int debug;
+};
+
 #endif /* ! MFRC522_CORE_H */

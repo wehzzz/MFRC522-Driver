@@ -1,5 +1,5 @@
-#include "entrypoint.h"
-#include "commands.h"
+#include "mfrc522_core.h"
+#include "mfrc522_commands.h"
 
 #define MAX_CHAR_LINE 5
 
