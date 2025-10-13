@@ -22,7 +22,7 @@
 struct mfrc522_dev {
 	struct cdev cdev;
 	struct device *dev;
-	//struct regmap *regmap;
+	struct i2c_client *client;
 	char buf[MFRC522_BUFSIZE + 1]; /* trailing NUL */
 	int debug;
 };

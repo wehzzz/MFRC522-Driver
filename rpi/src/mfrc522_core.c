@@ -158,6 +158,7 @@ static int mfrc522_probe(struct i2c_client *client)
 	}
 
 	g_mfrc522->dev = &client->dev;
+	g_mfrc522->client = client;
 
 	if (print_version(g_mfrc522) < 0)
 		goto error_handle;
