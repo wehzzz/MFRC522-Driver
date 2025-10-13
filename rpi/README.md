@@ -18,6 +18,12 @@ make -j12 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- bcm2709_defconfig
 make -j12 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- zImage modules dtbs
 ```
 
+## Install Kernel Headers
+```sh
+make -j12 headers_install INSTALL_HDR_PATH=/usr/src/linux-headers-6.12.51-v7+
+sudo ln -s /usr/src/linux-headers-6.12.51-v7+ /lib/modules/6.12.51-v7+/build
+```
+
 ## Install the kernel
 ### Find your boot media
 First, run lsblk. Then, connect your boot media. Run lsblk again; the new device represents your boot media. You should see output similar to the following:
