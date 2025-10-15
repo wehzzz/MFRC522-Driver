@@ -48,6 +48,7 @@ struct mfrc522_dev {
 	struct spi_device *spi;
 	char buf[MFRC522_BUFSIZE + 1]; /* trailing NUL */
 	int debug;
+	int to_read;
 };
 
 #endif /* ! MFRC522_CORE_H */

@@ -85,6 +85,7 @@ static int mem_write(struct mfrc522_dev *mfrc522, char *args)
 	if (mfrc522->debug)
 		debug_log(MEM_WRITE, debug_str);
 
+	mfrc522->to_read = len;
 	return len;
 }
 
@@ -117,6 +118,20 @@ static int mem_read(struct mfrc522_dev *mfrc522, char *args)
 	if (mfrc522->debug)
 		debug_log(MEM_READ, mfrc522->buf);
 
+	for (int i = 0; i < MFRC522_BUFSIZE; i++) {
+		if ((ret = spi_write_byte(mfrc522->spi, MFRC522_FIFODATAREG,
+					  '\0')) < 0) {
+			pr_err("MFRC522: failed to write data to FIFO\n");
+			return ret;
+		}
+	}
+
+	if ((ret = spi_write_byte(mfrc522->spi, MFRC522_CMDREG, MFRC522_MEM)) <
+	    0) {
+		pr_err("MFRC522: failed to write internal memory to FIFO\n");
+		return ret;
+	}
+
 	return MFRC522_BUFSIZE;
 }
 
@@ -130,6 +145,7 @@ static int gen_rand_id(struct mfrc522_dev *mfrc522, char *args)
 		return ret;
 	}
 
+	mfrc522->to_read = MFRC522_BUFSIZE;
 	return MFRC522_BUFSIZE;
 }
 

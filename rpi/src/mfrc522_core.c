@@ -36,23 +36,29 @@ static ssize_t mfrc522_read(struct file *file, char __user *buf, size_t len,
 {
 	size_t buf_len;
 	struct mfrc522_dev *mfrc522;
+	pr_info("READ\n");
 
 	(void)off;
 
-	mfrc522 = (struct mfrc522_dev *)file->private_data;
-	buf_len = strlen(mfrc522->buf);
+	if (g_mfrc522->to_read <= 0)
+		return 0;
 
-	if (len < buf_len) {
-		pr_err("MFRC522: When copying data to user, did not find enough buffer space\n");
-		return -ENOSPC;
-	}
+	mfrc522 = (struct mfrc522_dev *)file->private_data;
+	buf_len = g_mfrc522->to_read;
+
+	// if (len < buf_len) {
+	// 	pr_err("MFRC522: When copying data to user, did not find enough buffer space\n");
+	// 	return -ENOSPC;
+	// }
 
 	len = min(len, buf_len);
+	mfrc522->buf[len] = '\0';
 
-	if (copy_to_user(buf, mfrc522->buf, len)) {
+	if (copy_to_user(buf, mfrc522->buf, len + 1)) {
 		pr_err("MFRC522: When copying data to user, failed memory copy verification\n");
 		return -EFAULT;
 	}
+	g_mfrc522->to_read -= len;
 	memset(mfrc522->buf, 0, MFRC522_BUFSIZE + 1);
 
 	return len;
@@ -150,6 +156,7 @@ static int mfrc522_probe(struct spi_device *spi)
 	g_mfrc522->debug = 0;
 	g_mfrc522->dev = &spi->dev;
 	g_mfrc522->spi = spi;
+	g_mfrc522->to_read = 0;
 	memset(g_mfrc522->buf, 0, MFRC522_BUFSIZE);
 
 	ret = cdev_add(&g_mfrc522->cdev, dev, 1);
