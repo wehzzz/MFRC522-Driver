@@ -59,17 +59,16 @@ static int mem_write(struct mfrc522_dev *mfrc522, char *args)
 	data = args;
 
 	for (; i < len; i++) {
-		if ((ret = i2c_write_byte(mfrc522->client, MFRC522_FIFODATAREG,
+		if ((ret = spi_write_byte(mfrc522->spi, MFRC522_FIFODATAREG,
 					  data[i])) < 0) {
 			pr_err("MFRC522: failed to write data to FIFO\n");
 			return ret;
 		}
-		pr_info("WRITE\n");
 		debug_str[i] = data[i];
 	}
 
 	for (; i < MFRC522_BUFSIZE; i++) {
-		if ((ret = i2c_write_byte(mfrc522->client, MFRC522_FIFODATAREG,
+		if ((ret = spi_write_byte(mfrc522->spi, MFRC522_FIFODATAREG,
 					  '\0')) < 0) {
 			pr_err("MFRC522: failed to write data to FIFO\n");
 			return ret;
@@ -77,8 +76,8 @@ static int mem_write(struct mfrc522_dev *mfrc522, char *args)
 		debug_str[i] = '\0';
 	}
 
-	if ((ret = i2c_write_byte(mfrc522->client, MFRC522_CMDREG,
-				  MFRC522_MEM)) < 0) {
+	if ((ret = spi_write_byte(mfrc522->spi, MFRC522_CMDREG, MFRC522_MEM)) <
+	    0) {
 		pr_err("MFRC522: failed to write FIFO to internal memory\n");
 		return ret;
 	}
@@ -94,20 +93,20 @@ static int mem_read(struct mfrc522_dev *mfrc522, char *args)
 	int ret;
 	u8 value;
 
-	if ((ret = i2c_write_byte(mfrc522->client, MFRC522_FIFOLEVELREG,
+	if ((ret = spi_write_byte(mfrc522->spi, MFRC522_FIFOLEVELREG,
 				  MFRC522_FIFOLEVELREG_FLUSH)) < 0) {
 		pr_err("MFRC522: failed to flush FIFO\n");
 		return ret;
 	}
 
-	if ((ret = i2c_write_byte(mfrc522->client, MFRC522_CMDREG,
-				  MFRC522_MEM)) < 0) {
+	if ((ret = spi_write_byte(mfrc522->spi, MFRC522_CMDREG, MFRC522_MEM)) <
+	    0) {
 		pr_err("MFRC522: failed to write internal memory to FIFO\n");
 		return ret;
 	}
 
 	for (int i = 0; i < MFRC522_BUFSIZE; i++) {
-		if ((ret = i2c_read_byte(mfrc522->client, MFRC522_FIFODATAREG,
+		if ((ret = spi_read_byte(mfrc522->spi, MFRC522_FIFODATAREG,
 					 &value)) < 0) {
 			pr_err("MFRC522: failed to read data from FIFO\n");
 			return ret;
@@ -125,7 +124,7 @@ static int gen_rand_id(struct mfrc522_dev *mfrc522, char *args)
 {
 	int ret;
 
-	if ((ret = i2c_write_byte(mfrc522->client, MFRC522_CMDREG,
+	if ((ret = spi_write_byte(mfrc522->spi, MFRC522_CMDREG,
 				  MFRC522_GENERATERANDOMID)) < 0) {
 		pr_err("MFRC522: failed to write GENERATERANDOMID command to register\n");
 		return ret;

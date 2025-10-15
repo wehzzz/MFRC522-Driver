@@ -11,7 +11,7 @@
 #include <linux/regmap.h>
 #include <linux/errno.h>
 #include <linux/of.h>
-#include <linux/i2c.h>
+#include <linux/spi/spi.h>
 
 #define DEVICE_NAME "mfrc522"
 #define MFRC522_BUFSIZE 25
@@ -45,7 +45,7 @@
 struct mfrc522_dev {
 	struct cdev cdev;
 	struct device *dev;
-	struct i2c_client *client;
+	struct spi_device *spi;
 	char buf[MFRC522_BUFSIZE + 1]; /* trailing NUL */
 	int debug;
 };

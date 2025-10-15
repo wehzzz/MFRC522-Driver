@@ -58,16 +58,25 @@ sudo umount mnt/root
 
 ### Edit Device Tree
 ```
-&i2c1 {
+&spi0 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&i2c1_pins>;
-	clock-frequency = <100000>;
+	pinctrl-0 = <&spi0_pins &spi0_cs_pins>;
+	cs-gpios = <&gpio 8 1>, <&gpio 7 1>;
 	status = "okay";
+	
+	mfrc522@0 {
+        compatible = "nxp,mfrc522";
+        reg = <0>;
+        spi-max-frequency = <4000000>;
+        status = "okay";
+    };
 
-	mfrc522: mfrc522@28{
-		compatible = "nxp,mfrc522";
-		reg = <0x28>;
-		status = "okay";
+	spidev1: spidev@1{
+		compatible = "spidev";
+		reg = <1>;	/* CE1 */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		spi-max-frequency = <125000000>;
 	};
 };
 ```
@@ -84,7 +93,7 @@ arm_64bit=0
 uart_2ndstage=1
 kernel=kernel7.img
 device_tree=bcm2710-rpi-3-b-plus.dtb
-dtparam=i2c_arm=on
+dtparam=spi=on
 ```
 
 # SSH
@@ -92,9 +101,9 @@ dtparam=i2c_arm=on
 I connected mi RPI3b+ to my computer via ethernet. Make sure to share your wifi connection.
 My ethernet's ip is `192.168.137.1` so i just did the following commands on the RPI:
 ```
-ip addr flush dev eth0
-ip addr add 192.168.137.2/24 dev eth0
-ip link set eth0 up
+sudo ip addr flush dev eth0
+sudo ip addr add 192.168.137.2/24 dev eth0
+sudo ip link set eth0 up
 ```
 
 then you can use scp to transfer your file to the RPI

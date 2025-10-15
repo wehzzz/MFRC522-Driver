@@ -119,13 +119,12 @@ static int mfrc522_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
-static int mfrc522_probe(struct i2c_client *client)
+static int mfrc522_probe(struct spi_device *spi)
 {
 	dev_t dev;
 	int ret = 0;
 
-	dev_info(&client->dev, "Probing MFRC522 rfid card at 0x%02x\n",
-		 client->addr);
+	dev_info(&spi->dev, "Probing MFRC522 rfid card\n");
 
 	/* Step 1: dynamically allocate a major number */
 	ret = alloc_chrdev_region(&dev, 0, 1, DEVICE_NAME);
@@ -149,6 +148,8 @@ static int mfrc522_probe(struct i2c_client *client)
 	cdev_init(&g_mfrc522->cdev, &g_fops);
 	g_mfrc522->cdev.owner = THIS_MODULE;
 	g_mfrc522->debug = 0;
+	g_mfrc522->dev = &spi->dev;
+	g_mfrc522->spi = spi;
 	memset(g_mfrc522->buf, 0, MFRC522_BUFSIZE);
 
 	ret = cdev_add(&g_mfrc522->cdev, dev, 1);
@@ -156,9 +157,6 @@ static int mfrc522_probe(struct i2c_client *client)
 		pr_err("MFRC522: failed to add device to kernel\n");
 		goto free_dev;
 	}
-
-	g_mfrc522->dev = &client->dev;
-	g_mfrc522->client = client;
 
 	if (print_version(g_mfrc522) < 0)
 		goto error_handle;
@@ -168,6 +166,7 @@ static int mfrc522_probe(struct i2c_client *client)
 
 error_handle:
 	ret = -ENODEV;
+	cdev_del(&g_mfrc522->cdev);
 free_dev:
 	kfree(g_mfrc522);
 unregister_dev:
@@ -176,10 +175,10 @@ end:
 	return ret;
 }
 
-static void mfrc522_remove(struct i2c_client *client)
+static void mfrc522_remove(struct spi_device *spi)
 {
 	dev_t dev;
-	dev_info(&client->dev, "Removing MFRC522 rfid card driver\n");
+	dev_info(&spi->dev, "Removing MFRC522 rfid card driver\n");
 
 	cdev_del(&g_mfrc522->cdev);
 
@@ -195,10 +194,10 @@ static const struct of_device_id mfrc522_dt_id[] = { { .compatible =
 						     {} };
 MODULE_DEVICE_TABLE(of, mfrc522_dt_id);
 
-static const struct i2c_device_id mfrc522_id[] = { { "mfrc522", 0 }, {} };
+static const struct spi_device_id mfrc522_id[] = { { "mfrc522", 0 }, {} };
 MODULE_DEVICE_TABLE(i2c, mfrc522_id);
 
-static struct i2c_driver mfrc522_driver = {
+static struct spi_driver mfrc522_driver = {
     .driver = {
         .name = DEVICE_NAME,
         .of_match_table = mfrc522_dt_id,
@@ -208,4 +207,4 @@ static struct i2c_driver mfrc522_driver = {
     .id_table = mfrc522_id,
 };
 
-module_i2c_driver(mfrc522_driver);
+module_spi_driver(mfrc522_driver);
