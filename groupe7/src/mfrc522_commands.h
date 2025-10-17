@@ -1,8 +1,7 @@
-#ifndef COMMANDS_H
-#define COMMANDS_H
+#ifndef MFRC522_COMMANDS_H
+#define MFRC522_COMMANDS_H
 
 #include "mfrc522_core.h"
-#include "mfrc522_spi.h"
 
 #define CMDARGS_SEP ":"
 #define __MEM_WRITE "mem_write"
@@ -20,8 +19,8 @@ enum type {
 	DEBUG,
 };
 
-typedef int (*command)(struct mfrc522_dev *mfrc522, char *args);
+typedef int (*command)(struct card_dev *mfrc522, char *args);
 
-int command_handle(struct mfrc522_dev *mfrc522, char *cmd);
+int command_handle(struct card_dev *mfrc522, char *cmd);
 
-#endif /* ! COMMANDS_H */
+#endif /* ! MFRC522_COMMANDS_H */

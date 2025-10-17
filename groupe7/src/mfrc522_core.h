@@ -1,5 +1,5 @@
-#ifndef GISTRE_CARD_H
-#define GISTRE_CARD_H
+#ifndef MFRC522_CORE_H
+#define MFRC522_CORE_H
 
 #include <linux/slab.h>
 #include <linux/string.h>
@@ -15,17 +15,23 @@
 #include "mfrc522.h"
 
 #define MFRC522_BUFSIZE 25
+#define DEVICE_NAME "card"
 
-/* Structures:
- * - Device structure representing the MFRC522 device
+/*
+ * Structures
  */
+struct buffer {
+	char buf[MFRC522_BUFSIZE];
+	size_t to_read;
+};
+
 struct card_dev {
 	struct cdev cdev;
 	struct device *dev;
 	struct mfrc522_dev *mfrc522;
 	struct regmap *regmap;
-	char buf[MFRC522_BUFSIZE + 1]; /* trailing NUL */
+	struct buffer buffer;
 	bool debug;
 };
 
-#endif /* ! GISTRE_CARD_H */
+#endif /* ! MFRC522_CORE_H */
