@@ -21,4 +21,4 @@ clean:
 	. env/emu.env && make -C groupe7/src clean
 
 run:
-	./gistre26-dril-sdk/dril-sdk/buildroot-dril-sdk/start-qemu.sh
+	. env/emu.env && ./gistre26-dril-sdk/dril-sdk/buildroot-dril-sdk/start-qemu.sh

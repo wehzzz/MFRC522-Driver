@@ -14,7 +14,7 @@ int spi_write_byte(struct spi_device *spi, u8 reg, u8 val)
 
 int spi_read_byte(struct spi_device *spi, u8 reg, u8 *val)
 {
-	u8 tx[2], rx[2];
+	u8 tx[TRAME_BUFSIZE], rx[TRAME_BUFSIZE];
 	int ret;
 
 	tx[0] = (u8)(((reg << 1) & 0x7E) | 0x80);
