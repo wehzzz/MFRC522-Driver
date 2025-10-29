@@ -1,0 +1,27 @@
+{
+  "llvm-target": "armv7-unknown-linux-gnueabihf",
+  "data-layout": "e-m:e-p:32:32-Fi8-i64:64-v128:64:128-a:0:32-n32-S64",
+  "arch": "arm",
+  "target-endian": "little",
+  "target-pointer-width": 32,
+  "target-c-int-width": 32,
+  "os": "linux",
+  "env": "gnu",
+  "vendor": "",
+  "linker-flavor": "gcc",
+  "linker": "arm-linux-gnueabihf-gcc",
+  "executables": true,
+  "panic-strategy": "abort",
+  "disable-redzone": true,
+  "relocation-model": "static",
+  "code-model": "kernel",
+  "features": "+v7,+thumb2,-neon,+vfp3,-vfp4,-d32",
+  "max-atomic-width": 64,
+  "dynamic-linking": false,
+  "no-default-libraries": true,
+  "position-independent-executables": false,
+  "relro-level": "full",
+  "tls-model": "local-exec",
+  "has-thread-local": true
+}
+
