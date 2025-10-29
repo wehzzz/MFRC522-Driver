@@ -7,3 +7,4 @@ gistre26-dril-sdk/
 *.ko
 .*
 rpi/linux
+rust-project.json

@@ -196,15 +196,14 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&spi0_pins &spi0_cs_pins>;
 	cs-gpios = <&gpio 8 1>, <&gpio 7 1>;
-	status = "okay";
 
-	mfrc522@0 {
-        compatible = "nxp,mfrc522";
-        reg = <0>;
-		version = <0x01>;
-        spi-max-frequency = <1000000>;
-        status = "okay";
-    };
+	spidev0: spidev@0{
+		compatible = "spidev";
+		reg = <0>;	/* CE0 */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		spi-max-frequency = <125000000>;
+	};
 
 	spidev1: spidev@1{
 		compatible = "spidev";

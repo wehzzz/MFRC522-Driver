@@ -1,4 +1,4 @@
-.PHONY: all rpi emu clean run
+.PHONY: all rpi emu clean run rust
 
 all:
 	@echo "Usage:"
@@ -10,6 +10,15 @@ all:
 rpi:
 	@echo "Building module for RPI ..."
 	. env/rpi.env && make -C rpi/src modules
+
+rust:
+	@echo "Building module for Rust ..."
+	. env/rust.env && make -C rpi/linux M=$(PWD)/rust_module \
+    ARCH=arm \
+    CROSS_COMPILE=arm-linux-gnueabihf- \
+    LLVM=1 \
+    CONFIG_RUST=y \
+	modules
 
 emu:
 	@echo "Building module for QEMU ..."
