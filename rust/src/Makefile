@@ -3,7 +3,8 @@ KDIR := /lib/modules/$(KVERSION)/build
 
 ccflags-y := -I$(src)
 
-obj-m := rust_module.o
+obj-m := mfrc522.o
+mfrc522-y := rust_module.o
 
 default: modules
 modules:
