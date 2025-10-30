@@ -13,9 +13,9 @@ sudo apt install crossbuild-essential-armhf
 ## Build configuration
 ```sh
 cd linux
-KERNEL=kernel7
-make -j12 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- bcm2709_defconfig
-make -j12 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- zImage modules dtbs
+KERNEL=kernel8
+make -j12 LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- bcm2711_defconfig
+make -j12 LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- Image modules dtbs
 ```
 
 ## Install Kernel Headers
@@ -46,12 +46,12 @@ sudo mount /dev/sde2 mnt/root
 
 ### Install
 ```
-sudo make -j12 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=mnt/root modules_install
+sudo make -j12 LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- INSTALL_MOD_PATH=mnt/root modules_install
 sudo cp mnt/boot/$KERNEL.img mnt/boot/$KERNEL-backup.img
-sudo cp arch/arm/boot/zImage mnt/boot/$KERNEL.img
-sudo cp arch/arm/boot/dts/broadcom/*.dtb mnt/boot/
-sudo cp arch/arm/boot/dts/overlays/*.dtb* mnt/boot/overlays/
-sudo cp arch/arm/boot/dts/overlays/README mnt/boot/overlays/
+sudo cp arch/arm64/boot/Image mnt/boot/$KERNEL.img
+sudo cp arch/arm64/boot/dts/broadcom/*.dtb mnt/boot/
+sudo cp arch/arm64/boot/dts/overlays/*.dtb* mnt/boot/overlays/
+sudo cp arch/arm64/boot/dts/overlays/README mnt/boot/overlays/
 sudo umount mnt/boot
 sudo umount mnt/root
 ```
