@@ -13,12 +13,7 @@ rpi:
 
 rust:
 	@echo "Building module for Rust ..."
-	. env/rust.env && make -C rpi/linux M=$(PWD)/rust_module \
-    ARCH=arm \
-    CROSS_COMPILE=arm-linux-gnueabihf- \
-    LLVM=1 \
-    CONFIG_RUST=y \
-	modules
+	. env/rust.env && make -C rpi/linux M=$(PWD)/rust_module modules
 
 emu:
 	@echo "Building module for QEMU ..."
@@ -28,6 +23,7 @@ clean:
 	@echo "Cleaning all builds ..."
 	. env/rpi.env && make -C rpi/src clean
 	. env/emu.env && make -C groupe7/src clean
+	. env/rust.env && make -C rust_module clean
 
 run:
 	. env/emu.env && ./gistre26-dril-sdk/dril-sdk/buildroot-dril-sdk/start-qemu.sh
