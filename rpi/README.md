@@ -20,8 +20,7 @@ make -j12 LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- Image modules dtbs
 
 ## Install Kernel Headers
 ```sh
-make -j12 headers_install INSTALL_HDR_PATH=/usr/src/linux-headers-6.12.51-v7+
-sudo ln -s /usr/src/linux-headers-6.12.51-v7+ /lib/modules/6.12.51-v7+/build
+sudo make -j12 LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- modules_install
 ```
 
 ## Install the kernel
@@ -81,8 +80,8 @@ sudo umount mnt/root
 };
 ```
 then
-```
-make -j12 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- dtbs
+```sh
+make -j12 LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- dtbs
 ```
 
 ### Config

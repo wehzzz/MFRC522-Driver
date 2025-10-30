@@ -13,7 +13,7 @@ rpi:
 
 rust:
 	@echo "Building module for Rust ..."
-	. env/rust.env && make -C rpi/linux M=$(PWD)/rust/src modules
+	. env/rust.env && make -C rust/src modules
 
 emu:
 	@echo "Building module for QEMU ..."

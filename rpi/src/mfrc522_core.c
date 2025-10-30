@@ -189,7 +189,7 @@ static const struct of_device_id mfrc522_dt_id[] = { { .compatible =
 MODULE_DEVICE_TABLE(of, mfrc522_dt_id);
 
 static const struct spi_device_id mfrc522_id[] = { { "mfrc522", 0 }, {} };
-MODULE_DEVICE_TABLE(i2c, mfrc522_id);
+MODULE_DEVICE_TABLE(spi, mfrc522_id);
 
 static struct spi_driver mfrc522_driver = {
     .driver = {

@@ -1,14 +1,13 @@
-KVERSION := 6.12.51-v7+
+KVERSION := 6.12.56-v8+
 KDIR := /lib/modules/$(KVERSION)/build
-
-ccflags-y := -I$(src)
+PWD := $(shell pwd)
 
 obj-m := mfrc522.o
 mfrc522-y := rust_module.o
 
 default: modules
 modules:
-	make -C "$(KDIR)" M="$(PWD)" modules
+	make -B LLVM=1 -C "$(KDIR)" M="$(PWD)" modules
 
 clean:
-	make -C "$(KDIR)" M="$(PWD)" clean
+	make -B LLVM=1 -C "$(KDIR)" M="$(PWD)" clean
