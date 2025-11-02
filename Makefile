@@ -9,11 +9,11 @@ all:
 
 rpi:
 	@echo "Building module for RPI ..."
-	. env/rpi.env && make -C rpi/src modules
+	. env/rpi.env && make -C driver/c-src modules
 
 rust:
 	@echo "Building module for Rust ..."
-	. env/rust.env && make -C rust/src modules
+	. env/rust.env && make -C driver/rust-src modules
 
 emu:
 	@echo "Building module for QEMU ..."
@@ -21,9 +21,9 @@ emu:
 
 clean:
 	@echo "Cleaning all builds ..."
-	. env/rpi.env && make -C rpi/src clean
 	. env/emu.env && make -C groupe7/src clean
-	. env/rust.env && make -C rust/src clean
+	. env/rpi.env && make -C driver/c-src clean
+	. env/rust.env && make -C driver/rust-src clean
 
 run:
 	. env/emu.env && ./gistre26-dril-sdk/dril-sdk/buildroot-dril-sdk/start-qemu.sh
