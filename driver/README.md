@@ -109,3 +109,6 @@ then you can use scp to transfer your file to the RPI
 ```
 scp mfrc522.ko pi@192.168.137.2:/home/pi/
 ```
+
+# Rust
+https://rust.docs.kernel.org/kernel/
