@@ -1,4 +1,6 @@
-pub const DEVICE_NAME: &[u8] = b"mfrc522";
+use kernel::prelude::CStr;
+
+pub const DEVICE_NAME: &CStr = unsafe { CStr::from_bytes_with_nul_unchecked(b"mfrc522\0") };
 pub const MFRC522_BUFSIZE: usize = 25;
 
 pub const MFRC522_CMDREG: u8 = 0x01;
@@ -18,8 +20,8 @@ pub const MFRC522_SOFTRESET: u8 = 0xF;
 
 #[repr(C)]
 pub struct Buffer {
-    buffer: [u8; MFRC522_BUFSIZE],
-    to_read: usize,
+    pub buffer: [u8; MFRC522_BUFSIZE],
+    pub to_read: usize,
 }
 
 impl Default for Buffer {
@@ -27,26 +29,6 @@ impl Default for Buffer {
         Self {
             buffer: [0; MFRC522_BUFSIZE],
             to_read: 0,
-        }
-    }
-}
-
-pub struct Mfrc522Device {
-    cdev: u32,
-    dev: u32,
-    //spi: Option<SpiDevice>,
-    buffer: Buffer,
-    debug: u32,
-}
-
-impl Default for Mfrc522Device {
-    fn default() -> Self {
-        Self {
-            cdev: 0,
-            dev: 0,
-            //    spi: None,
-            buffer: Buffer::default(),
-            debug: 0,
         }
     }
 }
