@@ -3,11 +3,11 @@ KDIR := /lib/modules/$(KVERSION)/build
 PWD := $(shell pwd)
 ccflags-y := -std=gnu11
 obj-m := mfrc522.o
-mfrc522-y := internals/mfrc522.o internals/spi.o mfrc522_core.o
+mfrc522-y := internals/mfrc522.o internals/spi.o mfrc522_core.o mfrc522_commands.o
 
 default: modules
 modules:
-	make -B LLVM=1 -C "$(KDIR)" M="$(PWD)" modules
+	make LLVM=1 -C "$(KDIR)" M="$(PWD)" modules
 
 clean:
-	make -B LLVM=1 -C "$(KDIR)" M="$(PWD)" clean
+	make LLVM=1 -C "$(KDIR)" M="$(PWD)" clean
