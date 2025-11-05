@@ -1,15 +1,18 @@
 //! SPDX-License-Identifier: GPL-2.0
-use core::ptr::addr_of_mut;
-use kernel::prelude::*;
-
 pub mod internals;
+pub mod mfrc522_commands;
+pub mod mfrc522_spi;
 
-use crate::internals::spi;
-use crate::internals::{
-    Buffer, DriverRegistration, SpiDevice, SpiMethods, DEVICE_NAME, MFRC522_BUFSIZE,
-};
+use core::ptr::addr_of;
+use core::ptr::addr_of_mut;
 use kernel::bindings;
 use kernel::pr_info;
+use kernel::prelude::*;
+
+use crate::internals::{
+    mfrc522::{Buffer, Register, DEVICE_NAME, MFRC522_BUFSIZE},
+    spi::{self, DriverRegistration, SpiDevice, SpiMethods},
+};
 
 #[inline]
 fn major(dev: bindings::dev_t) -> u32 {
@@ -23,8 +26,8 @@ fn minor(dev: bindings::dev_t) -> u32 {
 
 #[inline]
 fn mkdev(major: u32, minor: u32) -> bindings::dev_t {
-    let major = major & 0xfff; // 12 bits
-    let minor = minor & 0xfffff; // 20 bits
+    let major = major & 0xfff;
+    let minor = minor & 0xfffff;
     ((major << 20) | minor) as bindings::dev_t
 }
 
@@ -40,15 +43,14 @@ struct Mfrc522Module {
     _registration: Pin<KBox<DriverRegistration>>,
 }
 
-struct Mfrc522Device {
-    pub cdev: bindings::cdev,
-    pub spi: SpiDevice,
-    pub buffer: Buffer,
-    pub debug: bool,
+pub struct Mfrc522Device {
+    cdev: bindings::cdev,
+    spi: SpiDevice,
+    buffer: Buffer,
 }
 
 impl kernel::Module for Mfrc522Module {
-    fn init(module: &'static ThisModule) -> Result<Self> {
+    fn init(_module: &'static ThisModule) -> Result<Self> {
         pr_info!("Initializing MFRC522 driver...\n");
 
         let registration =
@@ -68,7 +70,7 @@ impl Drop for Mfrc522Module {
     }
 }
 
-static mut G_MFRC522: Option<KBox<Mfrc522Device>> = None;
+pub static mut G_MFRC522: Option<KBox<Mfrc522Device>> = None;
 static mut G_MAJOR: i32 = 0;
 
 static mut FOPS: bindings::file_operations = bindings::file_operations {
@@ -108,13 +110,12 @@ impl SpiMethods for Mfrc522Device {
                     buffer: [0u8; MFRC522_BUFSIZE],
                     to_read: 0,
                 },
-                debug: false,
             },
             GFP_KERNEL,
         )?;
 
         unsafe {
-            bindings::cdev_init(&mut mfrc522_dev.cdev, &FOPS);
+            bindings::cdev_init(&mut mfrc522_dev.cdev, addr_of!(FOPS));
 
             let ret = bindings::cdev_add(&mut mfrc522_dev.cdev, dev, 1);
             if ret < 0 {
@@ -122,13 +123,6 @@ impl SpiMethods for Mfrc522Device {
                 bindings::unregister_chrdev_region(dev, 1);
                 return Err(Error::from_errno(ret));
             }
-            /*
-            if let Err(e) = print_version(&mut mfrc522_dev.spi) {
-                pr_err!("Failed to read MFRC522 version\n");
-                bindings::cdev_del(&mut mfrc522_dev.cdev);
-                bindings::unregister_chrdev_region(dev, 1);
-                return Err(e);
-            }*/
 
             G_MFRC522 = Some(mfrc522_dev);
         }
@@ -154,7 +148,7 @@ impl SpiMethods for Mfrc522Device {
 
 unsafe extern "C" fn mfrc522_open(
     inode: *mut bindings::inode,
-    file: *mut bindings::file,
+    _file: *mut bindings::file,
 ) -> core::ffi::c_int {
     let major_ = unsafe { G_MAJOR as u32 };
     let i_major = unsafe { major((*inode).i_rdev) };
@@ -206,15 +200,10 @@ unsafe extern "C" fn mfrc522_read(
 
     let remaining_off = MFRC522_BUFSIZE - to_read;
     let len = core::cmp::min(len, to_read);
-    let data = match mfrc522.buffer.buffer.get(remaining_off) {
-        None => return -(bindings::ENODATA as isize),
-        Some(data) => data,
-    };
-
     let ret = unsafe {
         bindings::copy_to_user(
             buf as *mut core::ffi::c_void,
-            *data as *mut core::ffi::c_void,
+            (mfrc522.buffer.buffer.as_ptr().add(remaining_off)) as *const core::ffi::c_void,
             len,
         )
     };
@@ -225,7 +214,7 @@ unsafe extern "C" fn mfrc522_read(
     }
 
     mfrc522.buffer.to_read -= len;
-    0 as isize
+    len as isize
 }
 
 unsafe extern "C" fn mfrc522_write(
@@ -253,10 +242,23 @@ unsafe extern "C" fn mfrc522_write(
             len,
         )
     };
+
+    unsafe { kbuf.set_len(len) };
+
     if ret != 0 {
         pr_err!("MFRC522: When copying data to user, failed memory copy verification\n");
         return -(bindings::EFAULT as isize);
     }
 
-    len as isize
+    let cmd = match core::str::from_utf8(&kbuf) {
+        Ok(cmd_str) => cmd_str,
+        Err(_) => {
+            return -(bindings::EINVAL as isize);
+        }
+    };
+
+    match mfrc522_commands::command_handle(cmd) {
+        Ok(_) => len as isize,
+        Err(_) => -(bindings::EINVAL as isize),
+    }
 }
