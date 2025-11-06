@@ -36,6 +36,24 @@ For this bonus, we have added support for the `debug:{on|off}` command in the fi
 
 ### Step 4.
 
+For bonus 4, we have added a function that allows us to read the MFRC522 `version` field in the device tree using the `of_property_read_u32()` function. This allows us to read the properties that were parsed in the device tree when the emulator was launched.
+
 ### Step 5.
+
+For the bonus of switching to Raspberry, we had to recompile a kernel.
+
+We encountered several problems during this step. Despite the guide on the official website
+
+At first, we had a faulty card that would not boot our compiled kernel, so we wasted a lot of time at that point.
+
+After changing the card, we didn't encounter any particular problems. We changed the device tree to add our card to the SPI bus.
+
+When launching the card, we encountered a `ZRAM0.swap` error that prevented us from booting our RPI correctly. To fix the problem, we had to change the kernel configuration with menuconfig and enable the option:
+```
+Device Driver -> Block Devices -> Compressed Ram Block Device Support[y].
+```
+
+After making this change, we were able to boot and set up an SSH tunnel to send our module. We did not encounter any particular difficulties in implementing the driver apart from switching from ragmap to SPI.
+
 ### Step 6.
 ### Step 7.
