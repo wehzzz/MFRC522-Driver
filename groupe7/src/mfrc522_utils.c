@@ -2,11 +2,10 @@
 
 int print_version(struct card_dev *mfrc522)
 {
-	int ret;
 	unsigned int version;
-
-	if ((ret = of_property_read_u32(mfrc522->dev->of_node,
-					MFRC522_PROP_VERSION, &version)) < 0) {
+	int ret = of_property_read_u32(mfrc522->dev->of_node,
+				       MFRC522_PROP_VERSION, &version);
+	if (ret < 0) {
 		pr_err("MFRC522: could not retrieve version property\n");
 		return ret;
 	}
@@ -34,15 +33,15 @@ int reset_internal_memory(struct card_dev *mfrc522)
 {
 	int ret;
 	for (int i = 0; i < MFRC522_BUFSIZE; i++) {
-		if ((ret = regmap_write(mfrc522->regmap, MFRC522_FIFODATAREG,
-					'\0')) < 0) {
+		ret = regmap_write(mfrc522->regmap, MFRC522_FIFODATAREG, '\0');
+		if (ret < 0) {
 			pr_err("MFRC522: failed to write data to FIFO\n");
 			return ret;
 		}
 	}
 
-	if ((ret = regmap_write(mfrc522->regmap, MFRC522_CMDREG, MFRC522_MEM)) <
-	    0) {
+	ret = regmap_write(mfrc522->regmap, MFRC522_CMDREG, MFRC522_MEM);
+	if (ret < 0) {
 		pr_err("MFRC522: failed to write internal memory to FIFO\n");
 		return ret;
 	}
