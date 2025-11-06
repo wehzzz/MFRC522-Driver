@@ -1,2 +1,2 @@
-pub mod mfrc522;
-pub mod spi;
+pub(crate) mod mfrc522;
+pub(crate) mod spi;

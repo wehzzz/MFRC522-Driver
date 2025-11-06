@@ -1,27 +1,23 @@
-use core::i32;
-use core::str::FromStr;
-
-use kernel::bindings;
-use kernel::error::{Error, Result};
-use kernel::prelude::{EINVAL, ENODEV};
-use kernel::{pr_err, pr_info};
-
-use crate::internals::{
-    mfrc522::{Cmd::*, Register},
-    spi::{Spi, SpiDevice},
+use kernel::{
+    error::{Error, Result},
+    pr_err,
 };
 
-pub fn spi_write(spi: &mut SpiDevice, reg: &u8, data: &mut u8) -> Result<(), Error> {
-    let tx: [u8; 2] = [(*reg << 1) & 0x7E, *data];
-    pr_info!("{}, {}", reg, data);
+use crate::internals::spi::{Spi, SpiDevice};
+
+const READ_MODE: u8 = 0x80;
+const MASK: u8 = 0x7E;
+
+pub(crate) fn spi_write(spi: &mut SpiDevice, reg: &u8, data: &mut u8) -> Result<(), Error> {
+    let tx: [u8; 2] = [(*reg << 1) & MASK, *data];
     Spi::write(spi, &tx).map_err(|err| {
         pr_err!("MFRC522: failed to write data to register {:#04x}\n", reg);
         err
     })
 }
 
-pub fn spi_read(spi: &mut SpiDevice, reg: &u8) -> Result<u8, Error> {
-    let tx_header: [u8; 1] = [((*reg << 1) & 0x7E) | 0x80];
+pub(crate) fn spi_read(spi: &mut SpiDevice, reg: &u8) -> Result<u8, Error> {
+    let tx_header: [u8; 1] = [((*reg << 1) & MASK) | READ_MODE];
     let mut rx_data: [u8; 1] = [0; 1];
 
     Spi::write(spi, &tx_header).map_err(|err| {

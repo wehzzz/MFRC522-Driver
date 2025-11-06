@@ -6,8 +6,7 @@ static int debug(struct card_dev *mfrc522, char *args)
 {
 	char *debug_mode;
 
-	debug_mode = strsep(&args, CMDARGS_SEP);
-	if (!debug_mode) {
+	if (!(debug_mode = strsep(&args, CMDARGS_SEP))) {
 		pr_err("MFRC522: Parse command: failed to extract debug_mode\n");
 		return -EINVAL;
 	}
@@ -32,8 +31,7 @@ static int mem_write(struct card_dev *mfrc522, char *args)
 	int i = 0;
 	char debug_str[MFRC522_BUFSIZE];
 
-	len_arg = strsep(&args, CMDARGS_SEP);
-	if (!len_arg) {
+	if (!(len_arg = strsep(&args, CMDARGS_SEP))) {
 		pr_err("MFRC522: Parse command: failed to extract length\n");
 		return -EINVAL;
 	}
@@ -146,15 +144,14 @@ static enum type command_dispatch(char *cmd)
 int command_handle(struct card_dev *mfrc522, char *cmd)
 {
 	enum type command_type;
-	char *command = strsep(&cmd, CMDARGS_SEP);
+	char *command;
 
-	if (!command) {
+	if (!(command = strsep(&cmd, CMDARGS_SEP))) {
 		pr_err("MFRC522: Parse command: failed to extract command\n");
 		return -EFAULT;
 	}
 
-	command_type = command_dispatch(command);
-	if (command_type == UNKNOWN_CMD) {
+	if ((command_type = command_dispatch(command)) == UNKNOWN_CMD) {
 		pr_err("MFRC522: Parse command: unrecognised command\n");
 		return -EINVAL;
 	}

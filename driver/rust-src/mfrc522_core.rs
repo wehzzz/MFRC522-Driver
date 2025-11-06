@@ -1,35 +1,16 @@
 //! SPDX-License-Identifier: GPL-2.0
-pub mod internals;
-pub mod mfrc522_commands;
-pub mod mfrc522_spi;
 
-use core::ptr::addr_of;
-use core::ptr::addr_of_mut;
-use kernel::bindings;
-use kernel::pr_info;
-use kernel::prelude::*;
+pub(crate) mod internals;
+pub(crate) mod mfrc522_commands;
+pub(crate) mod mfrc522_spi;
+
+use core::ptr::{addr_of, addr_of_mut};
+use kernel::{bindings, pr_info, prelude::*};
 
 use crate::internals::{
-    mfrc522::{Buffer, Register, DEVICE_NAME, MFRC522_BUFSIZE},
+    mfrc522::{Buffer, DEVICE_NAME, MFRC522_BUFSIZE},
     spi::{self, DriverRegistration, SpiDevice, SpiMethods},
 };
-
-#[inline]
-fn major(dev: bindings::dev_t) -> u32 {
-    (dev >> 20) as u32
-}
-
-#[inline]
-fn minor(dev: bindings::dev_t) -> u32 {
-    (dev & 0xfffff) as u32
-}
-
-#[inline]
-fn mkdev(major: u32, minor: u32) -> bindings::dev_t {
-    let major = major & 0xfff;
-    let minor = minor & 0xfffff;
-    ((major << 20) | minor) as bindings::dev_t
-}
 
 module! {
     type: Mfrc522Module,
@@ -39,11 +20,22 @@ module! {
     license: "GPL v2",
 }
 
+pub(crate) static mut G_MFRC522: Option<KBox<Mfrc522Device>> = None;
+static mut G_MAJOR: i32 = 0;
+static mut FOPS: bindings::file_operations = bindings::file_operations {
+    owner: unsafe { addr_of_mut!(bindings::__this_module) },
+    open: Some(mfrc522_open),
+    release: Some(mfrc522_release),
+    read: Some(mfrc522_read),
+    write: Some(mfrc522_write),
+    ..unsafe { core::mem::zeroed() }
+};
+
 struct Mfrc522Module {
     _registration: Pin<KBox<DriverRegistration>>,
 }
 
-pub struct Mfrc522Device {
+pub(crate) struct Mfrc522Device {
     cdev: bindings::cdev,
     spi: SpiDevice,
     buffer: Buffer,
@@ -69,18 +61,6 @@ impl Drop for Mfrc522Module {
         pr_info!("Goodbye, GISTRE card !\n");
     }
 }
-
-pub static mut G_MFRC522: Option<KBox<Mfrc522Device>> = None;
-static mut G_MAJOR: i32 = 0;
-
-static mut FOPS: bindings::file_operations = bindings::file_operations {
-    owner: unsafe { addr_of_mut!(bindings::__this_module) },
-    open: Some(mfrc522_open),
-    release: Some(mfrc522_release),
-    read: Some(mfrc522_read),
-    write: Some(mfrc522_write),
-    ..unsafe { core::mem::zeroed() }
-};
 
 impl SpiMethods for Mfrc522Device {
     declare_spi_methods!(probe, remove);
@@ -135,7 +115,7 @@ impl SpiMethods for Mfrc522Device {
         pr_info!("Removing MFRC522 rfid card driver\n");
 
         unsafe {
-            if let Some(mut mfrc522) = G_MFRC522.take() {
+            if let Some(mfrc522) = G_MFRC522.as_mut() {
                 bindings::cdev_del(&mut mfrc522.cdev);
                 let dev = mkdev(G_MAJOR as u32, 0);
                 bindings::unregister_chrdev_region(dev, 1);
@@ -223,13 +203,6 @@ unsafe extern "C" fn mfrc522_write(
     len: usize,
     _off: *mut bindings::loff_t,
 ) -> isize {
-    let mfrc522 = unsafe {
-        match G_MFRC522.as_mut() {
-            None => return -(bindings::ENODEV as isize),
-            Some(dev) => dev,
-        }
-    };
-
     let mut kbuf = match kernel::alloc::KVec::<u8>::with_capacity(len, GFP_KERNEL) {
         Ok(vec) => vec,
         Err(_) => return -(bindings::ENOMEM as isize),
@@ -261,4 +234,21 @@ unsafe extern "C" fn mfrc522_write(
         Ok(_) => len as isize,
         Err(_) => -(bindings::EINVAL as isize),
     }
+}
+
+#[inline]
+fn major(dev: bindings::dev_t) -> u32 {
+    (dev >> 20) as u32
+}
+
+#[inline]
+fn minor(dev: bindings::dev_t) -> u32 {
+    (dev & 0xfffff) as u32
+}
+
+#[inline]
+fn mkdev(major: u32, minor: u32) -> bindings::dev_t {
+    let major = major & 0xfff;
+    let minor = minor & 0xfffff;
+    ((major << 20) | minor) as bindings::dev_t
 }

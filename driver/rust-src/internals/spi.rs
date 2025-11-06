@@ -1,47 +1,45 @@
-// SPDX-License-Identifier: GPL-2.0
-
-use core::ffi;
-use core::pin::Pin;
-use kernel::alloc::kbox::KBox;
-use kernel::bindings;
-use kernel::error::{Error, Result};
-use kernel::prelude::GFP_KERNEL;
-use kernel::str::CStr;
-use kernel::ThisModule;
+use core::{ffi, pin::Pin};
+use kernel::{
+    alloc::kbox::KBox,
+    bindings,
+    error::{Error, Result},
+    prelude::GFP_KERNEL,
+    str::CStr,
+};
 
 #[derive(Clone, Copy)]
-pub struct SpiDevice(*mut bindings::spi_device);
+pub(crate) struct SpiDevice(*mut bindings::spi_device);
 
 impl SpiDevice {
-    pub unsafe fn from_ptr(dev: *mut bindings::spi_device) -> Self {
+    pub(crate) unsafe fn from_ptr(dev: *mut bindings::spi_device) -> Self {
         SpiDevice(dev)
     }
 
-    pub fn to_ptr(&mut self) -> *mut bindings::spi_device {
+    pub(crate) fn to_ptr(&mut self) -> *mut bindings::spi_device {
         self.0
     }
 }
 
-pub struct DriverRegistration {
+pub(crate) struct DriverRegistration {
     this_module: &'static crate::ThisModule,
     registered: bool,
     name: &'static CStr,
     spi_driver: bindings::spi_driver,
 }
 
-pub struct ToUse {
-    pub probe: bool,
-    pub remove: bool,
-    pub shutdown: bool,
+pub(crate) struct ToUse {
+    pub(crate) probe: bool,
+    pub(crate) remove: bool,
+    pub(crate) shutdown: bool,
 }
 
-pub const USE_NONE: ToUse = ToUse {
+pub(crate) const USE_NONE: ToUse = ToUse {
     probe: false,
     remove: false,
     shutdown: false,
 };
 
-pub trait SpiMethods {
+pub(crate) trait SpiMethods {
     const TO_USE: ToUse;
 
     fn probe(mut _spi_dev: SpiDevice) -> Result {
@@ -79,7 +77,7 @@ impl DriverRegistration {
         }
     }
 
-    pub fn new_pinned<T: SpiMethods>(
+    pub(crate) fn new_pinned<T: SpiMethods>(
         this_module: &'static crate::ThisModule,
         name: &'static CStr,
     ) -> Result<Pin<KBox<Self>>> {
@@ -100,7 +98,6 @@ impl DriverRegistration {
 
     unsafe extern "C" fn remove_wrapper<T: SpiMethods>(spi_dev: *mut bindings::spi_device) {
         let spi_dev = unsafe { SpiDevice::from_ptr(spi_dev) };
-        // Même si T::remove() renvoie Result, on ignore le retour (pas de code d’erreur transmis)
         let _ = T::remove(spi_dev);
     }
 
@@ -109,7 +106,7 @@ impl DriverRegistration {
         T::shutdown(spi_dev)
     }
 
-    pub fn register<T: SpiMethods>(self: Pin<&mut Self>) -> Result {
+    pub(crate) fn register<T: SpiMethods>(self: Pin<&mut Self>) -> Result {
         let this = unsafe { self.get_unchecked_mut() };
         if this.registered {
             return Err(Error::from_errno(-(bindings::EINVAL as i32)));
@@ -117,7 +114,6 @@ impl DriverRegistration {
 
         this.spi_driver.driver.name = this.name.as_ptr() as *const u8;
 
-        // Casts direct vers les bons types de fonction
         this.spi_driver.probe = if T::TO_USE.probe {
             Some(
                 Self::probe_wrapper::<T>
@@ -162,10 +158,10 @@ impl Drop for DriverRegistration {
 unsafe impl Sync for DriverRegistration {}
 unsafe impl Send for DriverRegistration {}
 
-pub struct Spi;
+pub(crate) struct Spi;
 
 impl Spi {
-    pub fn write_then_read(dev: &mut SpiDevice, tx_buf: &[u8], rx_buf: &mut [u8]) -> Result {
+    pub(crate) fn write_then_read(dev: &mut SpiDevice, tx_buf: &[u8], rx_buf: &mut [u8]) -> Result {
         let res = unsafe {
             bindings::spi_write_then_read(
                 dev.to_ptr(),
@@ -183,12 +179,12 @@ impl Spi {
     }
 
     #[inline]
-    pub fn write(dev: &mut SpiDevice, tx_buf: &[u8]) -> Result {
+    pub(crate) fn write(dev: &mut SpiDevice, tx_buf: &[u8]) -> Result {
         Spi::write_then_read(dev, tx_buf, &mut [0u8; 0])
     }
 
     #[inline]
-    pub fn read(dev: &mut SpiDevice, rx_buf: &mut [u8]) -> Result {
+    pub(crate) fn read(dev: &mut SpiDevice, rx_buf: &mut [u8]) -> Result {
         Spi::write_then_read(dev, &[0u8; 0], rx_buf)
     }
 }

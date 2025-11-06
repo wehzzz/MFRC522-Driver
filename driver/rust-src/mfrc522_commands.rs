@@ -1,18 +1,16 @@
 use core::i32;
-use core::str::FromStr;
 
-use kernel::bindings;
-use kernel::error::{Error, Result};
-use kernel::prelude::{EINVAL, ENODEV};
-use kernel::{pr_err, pr_info};
-
-use crate::internals::{
-    mfrc522::{Cmd::*, Register::*, MFRC522_BUFSIZE},
-    spi::Spi,
+use kernel::{
+    error::{Error, Result},
+    pr_err,
+    prelude::{EINVAL, ENODEV},
 };
-use crate::mfrc522_spi::{spi_read, spi_write};
-use crate::Mfrc522Device;
-use crate::G_MFRC522;
+
+use crate::{
+    internals::mfrc522::{Cmd::*, Register::*, MFRC522_BUFSIZE},
+    mfrc522_spi::{spi_read, spi_write},
+    G_MFRC522,
+};
 
 const __LOG_PREFIX: &[u8] = b"mfrc522";
 
@@ -35,7 +33,7 @@ fn command_dispatch(cmd: &str) -> Result<Command, Error> {
     }
 }
 
-pub fn command_handle(cmd: &str) -> Result<i32, Error> {
+pub(crate) fn command_handle(cmd: &str) -> Result<i32, Error> {
     let (cmd_name, args): (&str, &str) = match cmd.split_once(CMDARGS_SEP) {
         None => (cmd, ""),
         Some(arg) => arg,
@@ -45,18 +43,14 @@ pub fn command_handle(cmd: &str) -> Result<i32, Error> {
 
 fn reset_internal_memory() -> Result<(), Error> {
     let mfrc522 = unsafe {
-        match &mut G_MFRC522 {
+        match G_MFRC522.as_mut() {
             Some(mfrc) => mfrc,
             None => return Err(ENODEV),
         }
     };
 
     for _ in 0..(MFRC522_BUFSIZE) {
-        spi_write(
-            &mut mfrc522.spi,
-            &(Mfrc522FifoDataReg as u8),
-            &mut (0 as u8),
-        )?;
+        spi_write(&mut mfrc522.spi, &(Mfrc522FifoDataReg as u8), &mut 0u8)?;
     }
 
     spi_write(
@@ -69,7 +63,7 @@ fn reset_internal_memory() -> Result<(), Error> {
 
 fn mem_write(args: &str) -> Result<i32, Error> {
     let mfrc522 = unsafe {
-        match &mut G_MFRC522 {
+        match G_MFRC522.as_mut() {
             Some(mfrc) => mfrc,
             None => return Err(ENODEV),
         }
@@ -104,11 +98,7 @@ fn mem_write(args: &str) -> Result<i32, Error> {
         }
     }
     for _ in 0..(MFRC522_BUFSIZE as i32 - len) {
-        spi_write(
-            &mut mfrc522.spi,
-            &(Mfrc522FifoDataReg as u8),
-            &mut (0 as u8),
-        )?;
+        spi_write(&mut mfrc522.spi, &(Mfrc522FifoDataReg as u8), &mut 0u8)?;
     }
 
     spi_write(
@@ -119,7 +109,7 @@ fn mem_write(args: &str) -> Result<i32, Error> {
     Ok(MFRC522_BUFSIZE as i32)
 }
 
-fn mem_read(args: &str) -> Result<i32, Error> {
+fn mem_read(_args: &str) -> Result<i32, Error> {
     let mfrc522 = unsafe {
         match G_MFRC522.as_mut() {
             Some(dev) => &mut **dev,
@@ -149,9 +139,9 @@ fn mem_read(args: &str) -> Result<i32, Error> {
     Ok(MFRC522_BUFSIZE as i32)
 }
 
-fn generate_random_id(args: &str) -> Result<i32, Error> {
+fn generate_random_id(_args: &str) -> Result<i32, Error> {
     let mfrc522 = unsafe {
-        match &mut G_MFRC522 {
+        match G_MFRC522.as_mut() {
             Some(mfrc) => mfrc,
             None => return Err(ENODEV),
         }

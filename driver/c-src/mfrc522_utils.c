@@ -24,9 +24,9 @@ void debug_log(enum type cmd, const char *buf)
 	}
 
 	for (size_t i = 0; i < MAX_CHAR_LINE; i++) {
-		pr_info("%02x %02x %02x %02x %02x\n", buf[i * 5],
-			buf[i * 5 + 1], buf[i * 5 + 2], buf[i * 5 + 3],
-			buf[i * 5 + 4]);
+		pr_info("%02x %02x %02x %02x %02x\n", buf[i * MAX_CHAR_LINE],
+			buf[i * MAX_CHAR_LINE + 1], buf[i * MAX_CHAR_LINE + 2],
+			buf[i * MAX_CHAR_LINE + 3], buf[i * MAX_CHAR_LINE + 4]);
 	}
 }
 

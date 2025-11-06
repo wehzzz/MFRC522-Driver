@@ -61,9 +61,7 @@ static ssize_t mfrc522_write(struct file *file, const char __user *buf,
 	(void)off;
 
 	mfrc522 = (struct mfrc522_dev *)file->private_data;
-	kbuf = kmalloc(len + 1, GFP_KERNEL);
-
-	if (!kbuf)
+	if (!(kbuf = kmalloc(len + 1, GFP_KERNEL)))
 		return -ENOMEM;
 
 	memset(kbuf, 0, len + 1);
@@ -88,15 +86,13 @@ static int mfrc522_open(struct inode *inode, struct file *file)
 	unsigned i_major;
 	unsigned i_minor;
 
-	i_major = imajor(inode);
-	if (i_major != g_major) {
+	if ((i_major = imajor(inode)) != g_major) {
 		pr_err("MFRC522: when opening node, found invalid major number %d (expected %d)\n",
 		       i_major, g_major);
 		return -ENODEV;
 	}
 
-	i_minor = iminor(inode);
-	if (i_minor != 0) {
+	if ((i_minor = iminor(inode)) != 0) {
 		pr_err("MFRC522: when opening node, found invalid nonzero minor\n");
 		return -ENODEV;
 	}
@@ -119,9 +115,7 @@ static int mfrc522_probe(struct spi_device *spi)
 
 	dev_info(&spi->dev, "Probing MFRC522 rfid card\n");
 
-	/* Step 1: dynamically allocate a major number */
-	ret = alloc_chrdev_region(&dev, 0, 1, DEVICE_NAME);
-	if (ret < 0) {
+	if ((ret = alloc_chrdev_region(&dev, 0, 1, DEVICE_NAME)) < 0) {
 		pr_err("MFRC522: failed to register device\n");
 		goto end;
 	}
@@ -129,15 +123,12 @@ static int mfrc522_probe(struct spi_device *spi)
 	g_major = MAJOR(dev);
 	pr_info("MFRC522: allocated major number for device %d\n", g_major);
 
-	/* Step 2: allocate memory for the device structure */
-	g_mfrc522 = kmalloc(sizeof(*g_mfrc522), GFP_KERNEL);
-	if (!g_mfrc522) {
+	if (!(g_mfrc522 = kmalloc(sizeof(*g_mfrc522), GFP_KERNEL))) {
 		pr_err("MFRC522: failed to allocate memory for device\n");
 		ret = -ENOMEM;
 		goto unregister_dev;
 	}
 
-	/* Step 3: initialize the cdev structure and add it to the kernel */
 	cdev_init(&g_mfrc522->cdev, &g_fops);
 	g_mfrc522->cdev.owner = THIS_MODULE;
 	g_mfrc522->debug = 0;
@@ -146,8 +137,7 @@ static int mfrc522_probe(struct spi_device *spi)
 	g_mfrc522->buffer.to_read = 0;
 	memset(g_mfrc522->buffer.buf, 0, MFRC522_BUFSIZE);
 
-	ret = cdev_add(&g_mfrc522->cdev, dev, 1);
-	if (ret < 0) {
+	if ((ret = cdev_add(&g_mfrc522->cdev, dev, 1)) < 0) {
 		pr_err("MFRC522: failed to add device to kernel\n");
 		goto free_dev;
 	}
