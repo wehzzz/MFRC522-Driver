@@ -34,7 +34,20 @@ For the basic steps, we have implemented the functions as follows:
 
 `groupe7/src/Makefile` -> We compile our driver with the emulator's kernel headers, which we retrieve via environment variables. We also add the `mfrc522.h` header to the included sources to access the various functions and registers available.
 
-You can run `make emu` and then `make run` to compile and run the driver with QEMU.
+In order to build and run the driver you can make the following commands at the root of this project:
+```sh
+make emu && make run
+```
+
+or
+
+```sh
+source env/emu.env
+cd groupe7/src
+make modules
+cd ../../gistre26-dril-sdk/buildroot-dril-sdk
+./start-qemu.sh
+```
 
 ## Bonus steps
 
