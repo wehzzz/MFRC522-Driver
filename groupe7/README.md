@@ -72,4 +72,15 @@ Issues encountered during this step were that we intially started with I2C but c
 
 ### Step 7.
 
-For this bonus we had to setup a Rust working environment installing the right toolchains. Configurate the kernel so that the Rust support is enabled and build it.
+For this bonus we had to setup a Rust working environment installing the right toolchains that was accepted by the kernel so that the CONFIG_RUST_AVAILABLE kconfig variable is set.
+
+Then configurate the kernel so that the Rust support is enabled and the core and bindings crate are built and linked when building the kernel.
+
+After that we needed to reimplement the mfrc522 module in rust using the core and bindings crates provided by the kernel to be able to interact with the kernel APIs.
+
+Issues encountered during this step:
+
+- Learning we had to enable the Rust support as it was not enabled by default like we though.
+- Managing to set the right settings on the kernel. As we initially built it with the 32bit ARM architecture we were not supposed to be able to set it so we tried to modify the kconfig by hand which led to the kernel not building in it's entirety causing a "no symtab" error. We took quite some time fixing this issue as we were quite stuborn with the usage of the 32bit ARM architecture. Fixed by switching to 64bit ARM.
+- We also had a segfault at some point because we registered the fops with a variable that was created inside a function which meant that this variable containing the pointers to write/read functions was detroyed at the end of this scope. This as a behaviour is quite funny because it means that the kernel keeps the pointer to the fops and not only to the pointer to the functions that we provide.
+- Once we started really working on the driver we had some issues with our includes even with files inside of the crate. This was due to the fact that when building we were providing all our files as object files but actually when building rust into an object file one object file is one crate which led in our case to some weird dependencies problem.
