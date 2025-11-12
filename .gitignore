@@ -6,4 +6,7 @@ gistre26-dril-sdk/
 *.mod.c
 *.ko
 .*
-rpi/linux
+linux
+rust-project.json
+target/
+Cargo.*

@@ -4,9 +4,8 @@
 
 static int debug(struct card_dev *mfrc522, char *args)
 {
-	char *debug_mode;
+	char *debug_mode = strsep(&args, CMDARGS_SEP);
 
-	debug_mode = strsep(&args, CMDARGS_SEP);
 	if (!debug_mode) {
 		pr_err("MFRC522: Parse command: failed to extract debug_mode\n");
 		return -EINVAL;
@@ -45,8 +44,9 @@ static int mem_write(struct card_dev *mfrc522, char *args)
 	data = args;
 
 	for (; i < len; i++) {
-		if ((ret = regmap_write(mfrc522->regmap, MFRC522_FIFODATAREG,
-					data[i])) < 0) {
+		ret = regmap_write(mfrc522->regmap, MFRC522_FIFODATAREG,
+				   data[i]);
+		if (ret < 0) {
 			pr_err("MFRC522: failed to write data to FIFO\n");
 			return ret;
 		}
@@ -54,16 +54,16 @@ static int mem_write(struct card_dev *mfrc522, char *args)
 	}
 
 	for (; i < MFRC522_BUFSIZE; i++) {
-		if ((ret = regmap_write(mfrc522->regmap, MFRC522_FIFODATAREG,
-					'\0')) < 0) {
+		ret = regmap_write(mfrc522->regmap, MFRC522_FIFODATAREG, '\0');
+		if (ret < 0) {
 			pr_err("MFRC522: failed to write data to FIFO\n");
 			return ret;
 		}
 		debug_str[i] = '\0';
 	}
 
-	if ((ret = regmap_write(mfrc522->regmap, MFRC522_CMDREG, MFRC522_MEM)) <
-	    0) {
+	ret = regmap_write(mfrc522->regmap, MFRC522_CMDREG, MFRC522_MEM);
+	if (ret < 0) {
 		pr_err("MFRC522: failed to write FIFO to internal memory\n");
 		return ret;
 	}
@@ -79,21 +79,22 @@ static int mem_read(struct card_dev *mfrc522, char *args)
 	int ret;
 	int value;
 
-	if ((ret = regmap_write(mfrc522->regmap, MFRC522_FIFOLEVELREG,
-				MFRC522_FIFOLEVELREG_FLUSH)) < 0) {
+	ret = regmap_write(mfrc522->regmap, MFRC522_FIFOLEVELREG,
+			   MFRC522_FIFOLEVELREG_FLUSH);
+	if (ret < 0) {
 		pr_err("MFRC522: failed to flush FIFO\n");
 		return ret;
 	}
 
-	if ((ret = regmap_write(mfrc522->regmap, MFRC522_CMDREG, MFRC522_MEM)) <
-	    0) {
+	ret = regmap_write(mfrc522->regmap, MFRC522_CMDREG, MFRC522_MEM);
+	if (ret < 0) {
 		pr_err("MFRC522: failed to write internal memory to FIFO\n");
 		return ret;
 	}
 
 	for (int i = 0; i < MFRC522_BUFSIZE; i++) {
-		if ((ret = regmap_read(mfrc522->regmap, MFRC522_FIFODATAREG,
-				       &value)) < 0) {
+		ret = regmap_read(mfrc522->regmap, MFRC522_FIFODATAREG, &value);
+		if (ret < 0) {
 			pr_err("MFRC522: failed to read data from FIFO\n");
 			return ret;
 		}
@@ -103,7 +104,8 @@ static int mem_read(struct card_dev *mfrc522, char *args)
 	if (mfrc522->debug)
 		debug_log(MEM_READ, mfrc522->buffer.buf);
 
-	if ((ret = reset_internal_memory(mfrc522)) < 0)
+	ret = reset_internal_memory(mfrc522);
+	if (ret < 0)
 		return ret;
 
 	mfrc522->buffer.to_read = MFRC522_BUFSIZE;
@@ -112,10 +114,9 @@ static int mem_read(struct card_dev *mfrc522, char *args)
 
 static int gen_rand_id(struct card_dev *mfrc522, char *args)
 {
-	int ret;
-
-	if ((ret = regmap_write(mfrc522->regmap, MFRC522_CMDREG,
-				MFRC522_GENERATERANDOMID)) < 0) {
+	int ret = regmap_write(mfrc522->regmap, MFRC522_CMDREG,
+			       MFRC522_GENERATERANDOMID);
+	if (ret < 0) {
 		pr_err("MFRC522: failed to write GENERATERANDOMID command to register\n");
 		return ret;
 	}

@@ -1,0 +1,201 @@
+#include "mfrc522_core.h"
+
+#include "mfrc522_commands.h"
+#include "mfrc522_utils.h"
+
+MODULE_LICENSE("GPL v2");
+MODULE_AUTHOR("Anton VELLA <anton.vella@epita.fr>");
+MODULE_AUTHOR("Martin LEVESQUE <martin.levesque@epita.fr>");
+MODULE_DESCRIPTION("MFRC522 card reader driver");
+
+static ssize_t mfrc522_read(struct file *, char __user *, size_t, loff_t *);
+static ssize_t mfrc522_write(struct file *, const char __user *, size_t,
+			     loff_t *);
+static int mfrc522_open(struct inode *, struct file *);
+static int mfrc522_release(struct inode *, struct file *);
+
+/* 
+ * Global variables for the module
+ */
+static int g_major;
+static struct mfrc522_dev *g_mfrc522;
+static struct file_operations g_fops = {
+	.owner = THIS_MODULE,
+	.read = mfrc522_read,
+	.write = mfrc522_write,
+	.open = mfrc522_open,
+	.release = mfrc522_release,
+};
+
+static ssize_t mfrc522_read(struct file *file, char __user *buf, size_t len,
+			    loff_t *off)
+{
+	struct mfrc522_dev *mfrc522;
+	int remaining_off;
+
+	(void)off;
+
+	mfrc522 = (struct mfrc522_dev *)file->private_data;
+	if (mfrc522->buffer.to_read <= 0)
+		return 0;
+
+	remaining_off = MFRC522_BUFSIZE - mfrc522->buffer.to_read;
+	len = min(len, mfrc522->buffer.to_read);
+
+	if (copy_to_user(buf, mfrc522->buffer.buf + remaining_off, len)) {
+		pr_err("MFRC522: When copying data to user, failed memory copy verification\n");
+		return -EFAULT;
+	}
+	mfrc522->buffer.to_read -= len;
+
+	return len;
+}
+
+static ssize_t mfrc522_write(struct file *file, const char __user *buf,
+			     size_t len, loff_t *off)
+{
+	int ret;
+	struct mfrc522_dev *mfrc522;
+	char *kbuf;
+
+	(void)off;
+
+	mfrc522 = (struct mfrc522_dev *)file->private_data;
+	kbuf = kmalloc(len + 1, GFP_KERNEL);
+	if (!kbuf)
+		return -ENOMEM;
+
+	memset(kbuf, 0, len + 1);
+
+	if (copy_from_user(kbuf, buf, len) != 0) {
+		pr_err("MFRC522: failed to copy data from user\n");
+		kfree(kbuf);
+		return -EFAULT;
+	}
+
+	ret = command_handle(mfrc522, kbuf);
+	if (ret < 0) {
+		kfree(kbuf);
+		return ret;
+	}
+
+	kfree(kbuf);
+	return len;
+}
+
+static int mfrc522_open(struct inode *inode, struct file *file)
+{
+	unsigned i_major;
+	unsigned i_minor;
+
+	i_major = imajor(inode);
+	if (i_major != g_major) {
+		pr_err("MFRC522: when opening node, found invalid major number %d (expected %d)\n",
+		       i_major, g_major);
+		return -ENODEV;
+	}
+
+	i_minor = iminor(inode);
+	if (i_minor != 0) {
+		pr_err("MFRC522: when opening node, found invalid nonzero minor\n");
+		return -ENODEV;
+	}
+
+	file->private_data = g_mfrc522;
+	return 0;
+}
+
+static int mfrc522_release(struct inode *inode, struct file *file)
+{
+	(void)inode;
+	(void)file;
+	return 0;
+}
+
+static int mfrc522_probe(struct spi_device *spi)
+{
+	dev_t dev;
+	int ret = 0;
+
+	dev_info(&spi->dev, "Probing MFRC522 rfid card\n");
+
+	ret = alloc_chrdev_region(&dev, 0, 1, DEVICE_NAME);
+	if (ret < 0) {
+		pr_err("MFRC522: failed to register device\n");
+		goto end;
+	}
+
+	g_major = MAJOR(dev);
+	pr_info("MFRC522: allocated major number for device %d\n", g_major);
+
+	g_mfrc522 = kmalloc(sizeof(*g_mfrc522), GFP_KERNEL);
+	if (!g_mfrc522) {
+		pr_err("MFRC522: failed to allocate memory for device\n");
+		ret = -ENOMEM;
+		goto unregister_dev;
+	}
+
+	cdev_init(&g_mfrc522->cdev, &g_fops);
+	g_mfrc522->cdev.owner = THIS_MODULE;
+	g_mfrc522->debug = 0;
+	g_mfrc522->dev = &spi->dev;
+	g_mfrc522->spi = spi;
+	g_mfrc522->buffer.to_read = 0;
+	memset(g_mfrc522->buffer.buf, 0, MFRC522_BUFSIZE);
+
+	ret = cdev_add(&g_mfrc522->cdev, dev, 1);
+	if (ret < 0) {
+		pr_err("MFRC522: failed to add device to kernel\n");
+		goto free_dev;
+	}
+
+	if (print_version(g_mfrc522) < 0)
+		goto error_handle;
+
+	pr_info("Hello, GISTRE card !\n");
+	goto end;
+
+error_handle:
+	ret = -ENODEV;
+	cdev_del(&g_mfrc522->cdev);
+free_dev:
+	kfree(g_mfrc522);
+unregister_dev:
+	unregister_chrdev_region(dev, 1);
+end:
+	return ret;
+}
+
+static void mfrc522_remove(struct spi_device *spi)
+{
+	dev_t dev;
+	dev_info(&spi->dev, "Removing MFRC522 rfid card driver\n");
+
+	cdev_del(&g_mfrc522->cdev);
+
+	dev = MKDEV(g_major, 0);
+	kfree(g_mfrc522);
+
+	unregister_chrdev_region(dev, 1);
+	pr_info("Goodbye, GISTRE card !\n");
+}
+
+static const struct of_device_id mfrc522_dt_id[] = { { .compatible =
+							       "nxp,mfrc522" },
+						     {} };
+MODULE_DEVICE_TABLE(of, mfrc522_dt_id);
+
+static const struct spi_device_id mfrc522_id[] = { { "mfrc522", 0 }, {} };
+MODULE_DEVICE_TABLE(spi, mfrc522_id);
+
+static struct spi_driver mfrc522_driver = {
+    .driver = {
+        .name = DEVICE_NAME,
+        .of_match_table = mfrc522_dt_id,
+    },
+    .probe = mfrc522_probe,
+    .remove = mfrc522_remove,
+    .id_table = mfrc522_id,
+};
+
+module_spi_driver(mfrc522_driver);

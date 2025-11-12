@@ -62,8 +62,8 @@ static ssize_t mfrc522_write(struct file *file, const char __user *buf,
 	(void)off;
 
 	mfrc522 = (struct card_dev *)file->private_data;
-	kbuf = kmalloc(len + 1, GFP_KERNEL);
 
+	kbuf = kmalloc(len + 1, GFP_KERNEL);
 	if (!kbuf)
 		return -ENOMEM;
 
@@ -75,7 +75,8 @@ static ssize_t mfrc522_write(struct file *file, const char __user *buf,
 		return -EFAULT;
 	}
 
-	if ((ret = command_handle(mfrc522, kbuf)) < 0) {
+	ret = command_handle(mfrc522, kbuf);
+	if (ret < 0) {
 		kfree(kbuf);
 		return ret;
 	}
@@ -139,6 +140,7 @@ __init static int gistre_card_init(void)
 	g_mfrc522->debug = false;
 	g_mfrc522->buffer.to_read = 0;
 	memset(g_mfrc522->buffer.buf, 0, MFRC522_BUFSIZE);
+
 	ret = cdev_add(&g_mfrc522->cdev, dev, 1);
 	if (ret < 0) {
 		pr_err("MFRC522: failed to add device to kernel\n");
@@ -146,17 +148,19 @@ __init static int gistre_card_init(void)
 	}
 
 	g_mfrc522->dev = mfrc522_find_dev();
-	if (!g_mfrc522->dev) {
+	if (!(g_mfrc522->dev)) {
 		pr_err("MFRC522: could not find platform device\n");
 		goto error_handle;
 	}
+
 	g_mfrc522->mfrc522 = dev_to_mfrc522(g_mfrc522->dev);
-	if (!g_mfrc522->mfrc522) {
+	if (!(g_mfrc522->mfrc522)) {
 		pr_err("MFRC522: could not find platform device\n");
 		goto error_handle;
 	}
+
 	g_mfrc522->regmap = mfrc522_get_regmap(g_mfrc522->mfrc522);
-	if (!g_mfrc522->regmap) {
+	if (!(g_mfrc522->regmap)) {
 		pr_err("MFRC522: could not find regmap\n");
 		goto error_handle;
 	}
